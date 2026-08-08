@@ -7,53 +7,19 @@
 //// here would just be a second place for it to drift out of sync with
 //// glemy's real `index.html`.
 
-import gleam/list
 import glemy_website/layout
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
-pub fn view(base_path: String) -> Element(a) {
-  html.html([attribute.lang("en")], [
-    html.head(
-      [],
-      list.append(
-        layout.common_head_tags(
-          "Play",
-          "Play glemy's current preview live, right in your browser.",
-        ),
-        [
-          html.link([
-            attribute.rel("stylesheet"),
-            attribute.href(layout.url(base_path, "/style.css")),
-          ]),
-          layout.favicon(),
-        ],
-      ),
-    ),
-    html.body([], [
-      html.header([attribute.class("site-header")], [
-        html.nav([attribute.class("site-nav")], [
-          html.a(
-            [attribute.href(layout.url(base_path, "/")), attribute.class("site-brand")],
-            [html.text("glemy")],
-          ),
-          html.div([attribute.class("site-nav-links")], [
-            html.a([attribute.href(layout.url(base_path, "/"))], [html.text("Home")]),
-            html.a([attribute.href(layout.url(base_path, "/devlog"))], [
-              html.text("Devlog"),
-            ]),
-            html.a(
-              [
-                attribute.href(layout.url(base_path, "/play-demo/index.html")),
-                attribute.target("_blank"),
-              ],
-              [html.text("Open in new tab ↗")],
-            ),
-          ]),
-        ]),
-      ]),
-      html.main([attribute.class("site-main play-main")], [
+pub fn view(base_url: String) -> Element(a) {
+  layout.page(
+    base_url: base_url,
+    path: "/play",
+    title: "Play",
+    description: "Play glemy's current preview live, right in your browser.",
+    content: [
+      html.section([attribute.class("play-main")], [
         html.h1([], [html.text("Play the current preview")]),
         html.p([], [
           html.text(
@@ -62,10 +28,19 @@ pub fn view(base_path: String) -> Element(a) {
         ]),
         html.iframe([
           attribute.class("play-frame"),
-          attribute.src(layout.url(base_path, "/play-demo/index.html")),
+          attribute.src(layout.url(base_url, "/play-demo/index.html")),
           attribute.attribute("loading", "lazy"),
         ]),
+        html.p([attribute.class("play-open-tab")], [
+          html.a(
+            [
+              attribute.href(layout.url(base_url, "/play-demo/index.html")),
+              attribute.target("_blank"),
+            ],
+            [html.text("Open in new tab ↗")],
+          ),
+        ]),
       ]),
-    ]),
-  ])
+    ],
+  )
 }

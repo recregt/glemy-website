@@ -1,13 +1,16 @@
 -module(website_env_ffi).
--export([base_path/0]).
+-export([base_url/0]).
 
-%% Reads GLEMY_WEBSITE_BASE_PATH at build time. Unset -> "" (correct for
-%% local dev, serving `dist` at the domain root, and any future custom
-%% domain). Set by .github/workflows/deploy.yml to "/glemy-website" when
-%% deploying to GitHub Pages' project-site URL, which serves the site
-%% under that subpath rather than the domain root.
-base_path() ->
-    case os:getenv("GLEMY_WEBSITE_BASE_PATH") of
+%% Reads GLEMY_WEBSITE_BASE_URL at build time. Unset -> "" (correct for
+%% local dev, serving `dist` at the domain root). Set by
+%% .github/workflows/deploy.yml to actions/configure-pages' own base_url
+%% output (e.g. "https://recregt.github.io/glemy-website") -- used as the
+%% prefix for every internal link/asset (GitHub Pages serves a project
+%% site under a /<repo-name> subpath, not the domain root, so a
+%% root-relative href 404s) and, absolute, for canonical/OpenGraph URLs
+%% and the sitemap/Atom feed, which both require fully-qualified URLs.
+base_url() ->
+    case os:getenv("GLEMY_WEBSITE_BASE_URL") of
         false -> <<"">>;
         Value -> list_to_binary(Value)
     end.

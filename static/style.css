@@ -221,3 +221,97 @@ a:hover {
   border-radius: 8px;
   margin-top: 1.5rem;
 }
+
+.play-open-tab {
+  font-size: 0.9rem;
+}
+
+.devlog-category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.devlog-category-filter-label {
+  color: var(--fg-dim);
+  font-size: 0.9rem;
+}
+
+.devlog-category-pill {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--fg-dim);
+}
+
+.devlog-category-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.devlog-category-count {
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.devlog-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+}
+
+.devlog-tag {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  background: var(--bg-raised);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--fg-dim);
+  font-family: ui-monospace, monospace;
+}
+
+/* Roadmap page: rendered from glemy's own docs/development-plan.md via
+   lustre_ssg's djot renderer, so headings/lists/code below aren't
+   scoped under a devlog-* class -- they're the direct output of that
+   default renderer (see glemy_website/pages/roadmap). */
+.site-main h2 {
+  margin-top: 2.5rem;
+}
+
+.site-main pre {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.site-main code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.site-main :not(pre) > code {
+  background: var(--bg-raised);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.site-main blockquote {
+  margin: 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--border);
+  color: var(--fg-dim);
+}
+
+.site-main hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
+}

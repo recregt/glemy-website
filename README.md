@@ -28,6 +28,16 @@ mismatch, and direct precedent from `bevyengine/bevy-website`,
   javascript` + `index.html`, copied in at build time), not a
   reimplementation — embedded via an iframe at `/play`, since it's a
   genuinely separate, self-contained HTML document.
+- The **roadmap renders `glemy`'s own `docs/development-plan.md`
+  directly** (also fetched at build time), same reasoning as the devlog.
+- The **devlog is filterable by category** (`/devlog/category/<name>`) —
+  every `Decision` already carries one; tags aren't built into their own
+  pages, since almost all of the 85 real tag values are used exactly
+  once, so a dedicated page per tag has no value over the entry itself.
+- **`/sitemap.xml`, `/robots.txt`, and `/feed.xml`** (an Atom feed of the
+  20 most recent devlog entries, via `lustre_ssg`'s own `lustre/ssg/atom`
+  helper) are generated at build time from the same real route/decision
+  data, not hand-maintained separately.
 
 ## Note on the pinned `lustre_ssg` dependency
 
@@ -45,15 +55,18 @@ once `0.12.0` (or later) is actually published.
 ## Local development
 
 ```sh
-# Fetch the devlog content and build glemy's demo once, locally:
+# Fetch the devlog/roadmap content and build glemy's demo once, locally:
 cp ../glemy/docs/decisions.jsonl decisions.jsonl
+cp ../glemy/docs/development-plan.md development-plan.md
 mkdir -p static/play-demo/build/dev
 cp ../glemy/index.html static/play-demo/index.html
 cp -r ../glemy/build/dev/javascript static/play-demo/build/dev/javascript
 
 gleam deps download
 gleam test
-gleam run -m build   # generates ./dist
+gleam run -m build   # generates ./dist -- internal links are root-relative
+                      # by default (GLEMY_WEBSITE_BASE_URL unset), correct
+                      # for local serving
 
 # Serve it locally:
 deno run --allow-net --allow-read jsr:@std/http/file-server dist

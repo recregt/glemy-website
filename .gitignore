@@ -7,8 +7,10 @@ erl_crash.dump
 /dist
 
 # Fetched fresh from glemy at build time (see .github/workflows/deploy.yml)
-# -- not the source of truth, glemy's own docs/decisions.jsonl is.
+# -- not the source of truth, glemy's own docs/decisions.jsonl and
+# docs/development-plan.md are.
 /decisions.jsonl
+/development-plan.md
 
 # glemy's own build output, copied in at build time -- not source, a
 # generated artifact of a different repo.

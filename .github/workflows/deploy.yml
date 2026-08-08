@@ -51,8 +51,10 @@ jobs:
           gleam deps download
           gleam test
 
-      - name: Fetch decisions.jsonl from glemy
-        run: cp glemy/docs/decisions.jsonl decisions.jsonl
+      - name: Fetch decisions.jsonl and development-plan.md from glemy
+        run: |
+          cp glemy/docs/decisions.jsonl decisions.jsonl
+          cp glemy/docs/development-plan.md development-plan.md
 
       - name: Build glemy's JavaScript target (the live demo)
         working-directory: glemy
@@ -73,15 +75,17 @@ jobs:
         uses: actions/configure-pages@v6
 
       # GitHub Pages serves a project site (no custom domain) under a
-      # /<repo-name> subpath, not the domain root -- root-relative
-      # links/assets need that prefix or they 404 (confirmed live: see
-      # layout.gleam's `url` doc comment). configure-pages' own
-      # base_path output already tracks this correctly, including going
-      # back to "" automatically if a custom domain is ever added.
+      # /<repo-name> subpath, not the domain root -- internal links need
+      # that prefix or they 404 (confirmed live: see layout.gleam's
+      # `url` doc comment). configure-pages' own base_url output already
+      # tracks this correctly (a full absolute URL, also exactly what
+      # canonical/OpenGraph tags and the sitemap/Atom feed need), and
+      # goes back to the plain custom-domain URL automatically if one is
+      # ever added.
       - name: Build the site
         run: gleam run -m build
         env:
-          GLEMY_WEBSITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          GLEMY_WEBSITE_BASE_URL: ${{ steps.pages.outputs.base_url }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5.0.0
