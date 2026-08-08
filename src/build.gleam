@@ -11,6 +11,13 @@
 //// gives an honest non-zero exit code on failure -- important since
 //// this runs as a CI step that must actually fail the deploy, not just
 //// print an error and continue.
+////
+//// Reads `GLEMY_WEBSITE_BASE_PATH` (see `website_env_ffi.erl`) once and
+//// threads it through every page: GitHub Pages serves a project site
+//// under a `/<repo-name>` subpath rather than the domain root, so
+//// root-relative links/assets need that prefix to resolve correctly
+//// (confirmed live -- see `layout.url`'s doc comment for the exact
+//// 404 this fixes).
 
 import gleam/dict
 import gleam/io
@@ -42,13 +49,14 @@ fn run() -> Result(Nil, String) {
 
   let by_id =
     dict.from_list(list.map(decisions, fn(decision) { #(decision.id, decision) }))
+  let base_path = env_base_path()
 
   ssg.new("./dist")
   |> ssg.add_static_dir("./static")
-  |> ssg.add_static_route("/", home.view())
-  |> ssg.add_static_route("/devlog", devlog.index(decisions))
-  |> ssg.add_dynamic_route("/devlog", by_id, devlog.entry)
-  |> ssg.add_static_route("/play", play.view())
+  |> ssg.add_static_route("/", home.view(base_path))
+  |> ssg.add_static_route("/devlog", devlog.index(decisions, base_path))
+  |> ssg.add_dynamic_route("/devlog", by_id, devlog.entry(_, base_path))
+  |> ssg.add_static_route("/play", play.view(base_path))
   |> ssg.use_index_routes
   |> ssg.build
   |> result.map_error(fn(error) {
@@ -68,3 +76,7 @@ fn load_decisions() -> Result(List(Decision), String) {
 
 @external(erlang, "erlang", "halt")
 fn halt(code: Int) -> Nil
+
+/// See `website_env_ffi.erl` and `layout.url` for why this exists.
+@external(erlang, "website_env_ffi", "base_path")
+fn env_base_path() -> String

@@ -13,7 +13,7 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
-pub fn view() -> Element(a) {
+pub fn view(base_path: String) -> Element(a) {
   html.html([attribute.lang("en")], [
     html.head(
       [],
@@ -23,7 +23,10 @@ pub fn view() -> Element(a) {
           "Play glemy's current preview live, right in your browser.",
         ),
         [
-          html.link([attribute.rel("stylesheet"), attribute.href("/style.css")]),
+          html.link([
+            attribute.rel("stylesheet"),
+            attribute.href(layout.url(base_path, "/style.css")),
+          ]),
           layout.favicon(),
         ],
       ),
@@ -31,14 +34,20 @@ pub fn view() -> Element(a) {
     html.body([], [
       html.header([attribute.class("site-header")], [
         html.nav([attribute.class("site-nav")], [
-          html.a([attribute.href("/"), attribute.class("site-brand")], [
-            html.text("glemy"),
-          ]),
+          html.a(
+            [attribute.href(layout.url(base_path, "/")), attribute.class("site-brand")],
+            [html.text("glemy")],
+          ),
           html.div([attribute.class("site-nav-links")], [
-            html.a([attribute.href("/")], [html.text("Home")]),
-            html.a([attribute.href("/devlog")], [html.text("Devlog")]),
+            html.a([attribute.href(layout.url(base_path, "/"))], [html.text("Home")]),
+            html.a([attribute.href(layout.url(base_path, "/devlog"))], [
+              html.text("Devlog"),
+            ]),
             html.a(
-              [attribute.href("/play-demo/index.html"), attribute.target("_blank")],
+              [
+                attribute.href(layout.url(base_path, "/play-demo/index.html")),
+                attribute.target("_blank"),
+              ],
               [html.text("Open in new tab ↗")],
             ),
           ]),
@@ -53,7 +62,7 @@ pub fn view() -> Element(a) {
         ]),
         html.iframe([
           attribute.class("play-frame"),
-          attribute.src("/play-demo/index.html"),
+          attribute.src(layout.url(base_path, "/play-demo/index.html")),
           attribute.attribute("loading", "lazy"),
         ]),
       ]),

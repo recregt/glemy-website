@@ -9,8 +9,9 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
-pub fn index(all: List(Decision)) -> Element(a) {
+pub fn index(all: List(Decision), base_path: String) -> Element(a) {
   layout.page(
+    base_path: base_path,
     title: "Devlog",
     description: "Every real architectural decision behind glemy, in order — including the ones that didn't work.",
     content: [
@@ -21,7 +22,10 @@ pub fn index(all: List(Decision)) -> Element(a) {
             "This is glemy's real decision log, not a curated highlight reel — every entry states what was tried, what was rejected and why, and how the outcome was actually verified. Newest first.",
           ),
         ]),
-        html.ol([attribute.class("devlog-list")], list.map(all, entry_summary)),
+        html.ol(
+          [attribute.class("devlog-list")],
+          list.map(all, entry_summary(_, base_path)),
+        ),
       ]),
     ],
   )
@@ -34,13 +38,13 @@ pub fn index(all: List(Decision)) -> Element(a) {
 /// which branches on it. Every link to an individual entry needs the
 /// literal `.html` suffix because of that asymmetry; `/devlog` itself
 /// (a static route) does not.
-fn entry_href(decision: Decision) -> String {
-  "/devlog/" <> decision.id <> ".html"
+fn entry_href(decision: Decision, base_path: String) -> String {
+  layout.url(base_path, "/devlog/" <> decision.id <> ".html")
 }
 
-fn entry_summary(decision: Decision) -> Element(a) {
+fn entry_summary(decision: Decision, base_path: String) -> Element(a) {
   html.li([attribute.class("devlog-entry-summary")], [
-    html.a([attribute.href(entry_href(decision))], [
+    html.a([attribute.href(entry_href(decision, base_path))], [
       html.span([attribute.class("devlog-entry-id")], [
         html.text("#" <> decision.id),
       ]),
@@ -54,14 +58,17 @@ fn entry_summary(decision: Decision) -> Element(a) {
   ])
 }
 
-pub fn entry(decision: Decision) -> Element(a) {
+pub fn entry(decision: Decision, base_path: String) -> Element(a) {
   layout.page(
+    base_path: base_path,
     title: "#" <> decision.id <> " — " <> decision.title,
     description: decision.title,
     content: [
       html.article([attribute.class("devlog-entry")], [
         html.p([attribute.class("devlog-entry-back")], [
-          html.a([attribute.href("/devlog")], [html.text("← All decisions")]),
+          html.a([attribute.href(layout.url(base_path, "/devlog"))], [
+            html.text("← All decisions"),
+          ]),
         ]),
         html.p([attribute.class("devlog-entry-meta")], [
           html.text(

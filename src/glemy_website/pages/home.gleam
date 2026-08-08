@@ -3,8 +3,9 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
-pub fn view() -> Element(a) {
+pub fn view(base_path: String) -> Element(a) {
   layout.page(
+    base_path: base_path,
     title: "Home",
     description: "glemy is a Gleam game engine, developed in the open — currently previewed by a Suika-style merge puzzler.",
     content: [
@@ -16,12 +17,20 @@ pub fn view() -> Element(a) {
           ),
         ]),
         html.div([attribute.class("hero-actions")], [
-          html.a([attribute.href("/play"), attribute.class("button button-primary")], [
-            html.text("Play the current preview"),
-          ]),
-          html.a([attribute.href("/devlog"), attribute.class("button")], [
-            html.text("Read the devlog"),
-          ]),
+          html.a(
+            [
+              attribute.href(layout.url(base_path, "/play")),
+              attribute.class("button button-primary"),
+            ],
+            [html.text("Play the current preview")],
+          ),
+          html.a(
+            [
+              attribute.href(layout.url(base_path, "/devlog")),
+              attribute.class("button"),
+            ],
+            [html.text("Read the devlog")],
+          ),
         ]),
       ]),
       html.section([attribute.class("goals")], [

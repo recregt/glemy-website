@@ -11,7 +11,11 @@ import lustre/element/html
 /// added by `lustre/element`'s own `to_document_string` at the point
 /// each page is actually rendered to a file (see `build.gleam`), not
 /// here.
+///
+/// `base_path` prefixes every root-relative link/asset URL this page
+/// emits -- see `url` below for why that's needed at all.
 pub fn page(
+  base_path base_path: String,
   title title: String,
   description description: String,
   content content: List(Element(a)),
@@ -20,12 +24,35 @@ pub fn page(
     html.head(
       [],
       list.append(common_head_tags(title, description), [
-        html.link([attribute.rel("stylesheet"), attribute.href("/style.css")]),
+        html.link([
+          attribute.rel("stylesheet"),
+          attribute.href(url(base_path, "/style.css")),
+        ]),
         favicon(),
       ]),
     ),
-    html.body([], [nav(), html.main([attribute.class("site-main")], content), footer()]),
+    html.body([], [
+      nav(base_path),
+      html.main([attribute.class("site-main")], content),
+      footer(),
+    ]),
   ])
+}
+
+/// Prefixes a root-relative `path` (always starting with `/`) with
+/// `base_path`. Needed because GitHub Pages serves a project site (one
+/// not on its own custom domain) under a `/<repo-name>` subpath rather
+/// than the domain root -- a root-relative `href="/style.css"` resolves
+/// against `https://recregt.github.io/`, not
+/// `https://recregt.github.io/glemy-website/`, and 404s (confirmed live:
+/// `curl -o /dev/null -w '%{http_code}' https://recregt.github.io/style.css`
+/// returned 404, the `/glemy-website/style.css` equivalent 200).
+/// `base_path` is read once at build time in `build.gleam` from the
+/// `GLEMY_WEBSITE_BASE_PATH` env var (see `website_env_ffi.erl`) --
+/// empty for local dev and any future custom domain, `/glemy-website`
+/// for the current GitHub Pages URL.
+pub fn url(base_path: String, path: String) -> String {
+  base_path <> path
 }
 
 /// The `<meta charset>`/viewport/description/title tags every page
@@ -63,16 +90,16 @@ pub fn favicon() -> Element(a) {
   ])
 }
 
-fn nav() -> Element(a) {
+fn nav(base_path: String) -> Element(a) {
   html.header([attribute.class("site-header")], [
     html.nav([attribute.class("site-nav")], [
-      html.a([attribute.href("/"), attribute.class("site-brand")], [
+      html.a([attribute.href(url(base_path, "/")), attribute.class("site-brand")], [
         html.text("glemy"),
       ]),
       html.div([attribute.class("site-nav-links")], [
-        html.a([attribute.href("/")], [html.text("Home")]),
-        html.a([attribute.href("/devlog")], [html.text("Devlog")]),
-        html.a([attribute.href("/play")], [html.text("Play")]),
+        html.a([attribute.href(url(base_path, "/"))], [html.text("Home")]),
+        html.a([attribute.href(url(base_path, "/devlog"))], [html.text("Devlog")]),
+        html.a([attribute.href(url(base_path, "/play"))], [html.text("Play")]),
         html.a([attribute.href("https://github.com/recregt/glemy")], [
           html.text("GitHub"),
         ]),
