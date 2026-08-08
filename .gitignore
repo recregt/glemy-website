@@ -1,0 +1,15 @@
+*.beam
+*.ez
+/build
+erl_crash.dump
+
+# lustre_ssg's generated output.
+/dist
+
+# Fetched fresh from glemy at build time (see .github/workflows/deploy.yml)
+# -- not the source of truth, glemy's own docs/decisions.jsonl is.
+/decisions.jsonl
+
+# glemy's own build output, copied in at build time -- not source, a
+# generated artifact of a different repo.
+/static/play-demo

@@ -1,0 +1,91 @@
+name: Build and deploy
+
+# Rebuilds and republishes on every push, and once a day on a schedule
+# (06:00 UTC) so the devlog and the live demo stay current even when
+# glemy itself changes without a corresponding push here -- the two
+# repos are deliberately separate (see glemy's ARCHITECTURE.md /
+# docs/decisions.jsonl for the reasoning), so there's no single push
+# event that naturally covers both. workflow_dispatch is there for a
+# manual rebuild on demand, e.g. right after a real glemy release.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy at a time; a newer push should win over an in-flight
+# older one rather than queueing behind it.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout glemy-website
+        uses: actions/checkout@v7
+
+      # A second, separate checkout -- decisions.jsonl and the live
+      # demo build both come from glemy's own repo, not this one.
+      - name: Checkout glemy
+        uses: actions/checkout@v7
+        with:
+          repository: recregt/glemy
+          path: glemy
+
+      - uses: erlef/setup-beam@v1.24.1
+        with:
+          otp-version: "27"
+          gleam-version: "1.18.1"
+          rebar3-version: "3"
+
+      - name: Test glemy-website
+        run: |
+          gleam deps download
+          gleam test
+
+      - name: Fetch decisions.jsonl from glemy
+        run: cp glemy/docs/decisions.jsonl decisions.jsonl
+
+      - name: Build glemy's JavaScript target (the live demo)
+        working-directory: glemy
+        run: gleam deps download && gleam build --target javascript
+
+      # Preserves glemy/index.html's own relative import paths
+      # (./build/dev/javascript/glemy/glemy/*.mjs) exactly, so the
+      # copied demo runs unmodified -- the same output the local dev
+      # server already serves directly from the glemy repo root.
+      - name: Copy the live demo into static assets
+        run: |
+          mkdir -p static/play-demo/build/dev
+          cp glemy/index.html static/play-demo/index.html
+          cp -r glemy/build/dev/javascript static/play-demo/build/dev/javascript
+
+      - name: Build the site
+        run: gleam run -m build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5.0.0

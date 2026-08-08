@@ -1,0 +1,22 @@
+name = "glemy_website"
+version = "1.0.0"
+description = "The official glemy game engine website: goals, devlog, and live demo"
+repository = { type = "github", user = "recregt", repo = "glemy-website" }
+links = [{ title = "Live site", href = "https://recregt.github.io/glemy-website/" }]
+
+[dependencies]
+gleam_stdlib = ">= 1.0.0 and < 2.0.0"
+lustre = ">= 5.7.1 and < 6.0.0"
+# Hex's published lustre_ssg (0.11.0) hard-pins jot = "4.0.0", which calls
+# result.then -- a function gleam_stdlib removed (confirmed by reading
+# gleam_stdlib's own result.gleam directly: only `try` exists in the
+# resolved 1.0.5). lustre-labs/ssg's GitHub main branch already fixed
+# this (jot = ">= 8.0.0 and < 9.0.0", confirmed by reading its gleam.toml
+# directly) as an unreleased 0.12.0 -- pinned to that exact commit,
+# per Gleam's own documented preference for a commit sha over a branch.
+lustre_ssg = { git = "https://github.com/lustre-labs/ssg", ref = "2992bf78179d1be2876f834f0d923003f7f43f44" }
+gleam_json = ">= 3.1.0 and < 4.0.0"
+simplifile = ">= 2.7.0 and < 3.0.0"
+
+[dev_dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

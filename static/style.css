@@ -1,0 +1,223 @@
+/* glemy-website's one stylesheet -- deliberately plain: this site's job
+   is to communicate the engine's goals and devlog clearly, not to show
+   off CSS. Dark theme matches glemy's own index.html. */
+
+:root {
+  --bg: #111;
+  --bg-raised: #1a1a1a;
+  --fg: #ccc;
+  --fg-dim: #888;
+  --accent: #e63946;
+  --border: #333;
+  --max-width: 46rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+}
+
+.site-nav {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.site-brand {
+  font-weight: bold;
+  font-size: 1.25rem;
+  color: var(--fg);
+}
+
+.site-nav-links {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.site-main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem;
+  color: var(--fg-dim);
+  font-size: 0.9rem;
+}
+
+.site-footer p {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.hero {
+  text-align: center;
+  padding: 2rem 0 3rem;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin: 0 0 0.5rem;
+}
+
+.hero-tagline {
+  color: var(--fg-dim);
+  font-size: 1.15rem;
+  max-width: 34rem;
+  margin: 0 auto 2rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.6rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg);
+}
+
+.button:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.goals-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.goals-list h3 {
+  margin-bottom: 0.25rem;
+}
+
+.goals-list p {
+  color: var(--fg-dim);
+  margin-top: 0;
+}
+
+.devlog-intro {
+  color: var(--fg-dim);
+}
+
+.devlog-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.devlog-entry-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.devlog-entry-id {
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.5rem;
+}
+
+.devlog-entry-meta {
+  color: var(--fg-dim);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.devlog-entry-back {
+  margin-bottom: 1rem;
+}
+
+.devlog-section {
+  margin-top: 2rem;
+}
+
+.devlog-section h2 {
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-dim);
+}
+
+.devlog-options dt {
+  font-weight: bold;
+  margin-top: 1rem;
+}
+
+.devlog-option-chosen {
+  color: #4caf50;
+}
+
+.devlog-option-rejected {
+  color: var(--fg-dim);
+}
+
+.devlog-references {
+  padding-left: 1.25rem;
+}
+
+.devlog-references code,
+.devlog-references a {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+
+.play-main h1 {
+  margin-bottom: 0.5rem;
+}
+
+.play-frame {
+  display: block;
+  width: 100%;
+  max-width: 512px;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 1.5rem;
+}
