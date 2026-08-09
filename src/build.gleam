@@ -21,11 +21,13 @@
 //// 404 this fixes). The same value, being a full absolute URL, is also
 //// exactly what canonical/OpenGraph tags and the sitemap/Atom feed need.
 
+import gleam/bit_array
 import gleam/dict
 import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
+import glemy_website/asset_hash
 import glemy_website/decisions.{type Decision}
 import glemy_website/feed
 import glemy_website/pages/devlog
@@ -54,24 +56,37 @@ pub fn main() -> Nil {
 fn run() -> Result(Nil, String) {
   use decisions <- result.try(load_decisions())
   use roadmap_entries <- result.try(load_roadmap_items())
+  use #(style_hash, style_content) <- result.try(load_style_asset())
+  use play_demo_path <- result.try(prepare_play_demo_dir())
 
   let by_id =
     dict.from_list(list.map(decisions, fn(decision) { #(decision.id, decision) }))
   let by_category = list.group(decisions, fn(decision) { decision.category })
   let base_url = env_base_url()
+  let style_filename = asset_hash.hashed_filename("style.css", style_hash)
 
   ssg.new("./dist")
   |> ssg.add_static_dir("./static")
-  |> ssg.add_static_route("/", home.view(base_url))
-  |> ssg.add_static_route("/devlog", devlog.index(decisions, base_url))
-  |> ssg.add_dynamic_route("/devlog", by_id, devlog.entry(_, base_url))
+  |> ssg.add_static_asset("/" <> style_filename, style_content)
+  |> ssg.add_static_route("/", home.view(base_url, style_hash, play_demo_path))
+  |> ssg.add_static_route(
+    "/devlog",
+    devlog.index(decisions, base_url, style_hash),
+  )
+  |> ssg.add_dynamic_route("/devlog", by_id, devlog.entry(_, base_url, style_hash))
   |> ssg.add_dynamic_route(
     "/devlog/category",
     by_category,
-    category_page(_, base_url),
+    category_page(_, base_url, style_hash),
   )
-  |> ssg.add_static_route("/play", play.view(base_url))
-  |> ssg.add_static_route("/roadmap", roadmap.view(base_url, roadmap_entries))
+  |> ssg.add_static_route(
+    "/play",
+    play.view(base_url, style_hash, play_demo_path),
+  )
+  |> ssg.add_static_route(
+    "/roadmap",
+    roadmap.view(base_url, roadmap_entries, style_hash),
+  )
   |> ssg.add_static_xml("/sitemap", sitemap.build(decisions, base_url))
   |> ssg.add_static_xml("/feed", feed.build(decisions, base_url))
   |> ssg.add_static_asset("/robots.txt", robots_txt(base_url))
@@ -88,11 +103,99 @@ fn run() -> Result(Nil, String) {
 /// field is the category name. `list.group` never produces an empty
 /// value list (a key only exists once something mapped to it), so this
 /// case is exhaustive.
-fn category_page(entries: List(Decision), base_url: String) -> element.Element(
-  Nil,
-) {
+fn category_page(
+  entries: List(Decision),
+  base_url: String,
+  style_hash: String,
+) -> element.Element(Nil) {
   let assert [first, ..] = entries
-  devlog.category_page(first.category, entries, base_url)
+  devlog.category_page(first.category, entries, base_url, style_hash)
+}
+
+/// Reads `assets/style.css` (the committed source -- not `static/`,
+/// which `add_static_dir` copies verbatim under its existing name; this
+/// file needs to be published under a *different*, content-derived
+/// name instead, so it can't live somewhere that would also get copied
+/// under its original one) and returns its content hash alongside its
+/// content, so both the filename (`asset_hash.hashed_filename`) and the
+/// actual published bytes come from the same read.
+fn load_style_asset() -> Result(#(String, String), String) {
+  use content <- result.try(
+    simplifile.read("./assets/style.css")
+    |> result.map_error(fn(error) {
+      "could not read assets/style.css: " <> string.inspect(error)
+    }),
+  )
+  Ok(#(asset_hash.hash(bit_array.from_string(content)), content))
+}
+
+/// Content-hashes glemy's real build output (copied into
+/// `static/play-demo/` before this runs -- see
+/// `.github/workflows/deploy.yml`) as one unit, renaming the whole
+/// directory to `static/play-demo-<hash>/` rather than hashing each
+/// file inside it individually: this is a bundler-free, raw-ESM build
+/// (decision 0003) whose files import each other by relative path, so
+/// renaming files individually would break those imports, while
+/// renaming the *directory* they're all already inside changes nothing
+/// about how they refer to each other. Returns the published path
+/// segment (e.g. `/play-demo-a1b2c3d4`) for `game_card` to build real
+/// links from.
+///
+/// Tolerant of the demo not being freshly copied in this run: if
+/// `static/play-demo` (the unhashed name the copy step always uses) no
+/// longer exists -- already renamed by a prior local build that reused
+/// the same `static/` directory without recopying -- this looks for
+/// whatever `play-demo-*` directory is already there instead of
+/// failing, and falls back to the plain, unhashed `/play-demo` if
+/// neither exists at all (a partial local build not exercising the
+/// live demo shouldn't fail the whole site build over it -- the link
+/// simply 404s until the demo is actually copied in, matching this
+/// project's behavior before content-hashing existed).
+fn prepare_play_demo_dir() -> Result(String, String) {
+  let unhashed_dir = "./static/play-demo"
+  case simplifile.is_directory(unhashed_dir) {
+    Ok(True) -> {
+      use files <- result.try(
+        simplifile.get_files(in: unhashed_dir)
+        |> result.map_error(fn(error) {
+          "could not list static/play-demo: " <> string.inspect(error)
+        }),
+      )
+      use contents <- result.try(
+        list.sort(files, string.compare)
+        |> list.try_map(fn(path) {
+          simplifile.read_bits(path)
+          |> result.map_error(fn(error) {
+            "could not read " <> path <> ": " <> string.inspect(error)
+          })
+        }),
+      )
+      let hash = asset_hash.hash(bit_array.concat(contents))
+      let hashed_dir = "./static/play-demo-" <> hash
+      use _ <- result.try(
+        simplifile.rename(at: unhashed_dir, to: hashed_dir)
+        |> result.map_error(fn(error) {
+          "could not rename static/play-demo to "
+          <> hashed_dir
+          <> ": "
+          <> string.inspect(error)
+        }),
+      )
+      Ok("/play-demo-" <> hash)
+    }
+    _ -> Ok(discover_or_default_play_demo_path())
+  }
+}
+
+fn discover_or_default_play_demo_path() -> String {
+  case simplifile.read_directory("./static") {
+    Ok(entries) ->
+      case list.find(entries, string.starts_with(_, "play-demo")) {
+        Ok(name) -> "/" <> name
+        Error(_) -> "/play-demo"
+      }
+    Error(_) -> "/play-demo"
+  }
 }
 
 fn robots_txt(base_url: String) -> String {

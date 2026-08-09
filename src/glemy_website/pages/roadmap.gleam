@@ -18,7 +18,11 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
-pub fn view(base_url: String, items: List(RoadmapItem)) -> Element(a) {
+pub fn view(
+  base_url: String,
+  items: List(RoadmapItem),
+  style_hash: String,
+) -> Element(a) {
   let phases =
     items
     |> list.map(fn(item) { item.phase })
@@ -30,6 +34,7 @@ pub fn view(base_url: String, items: List(RoadmapItem)) -> Element(a) {
     path: "/roadmap",
     title: "Roadmap",
     description: "glemy's living, status-tracked development roadmap -- what's planned, in progress, resolved, or deferred, and why.",
+    style_hash: style_hash,
     content: [
       html.section([attribute.class("roadmap-index")], [
         html.h1([], [html.text("Roadmap")]),

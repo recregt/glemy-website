@@ -13,5 +13,7 @@ erl_crash.dump
 /development-plan.jsonl
 
 # glemy's own build output, copied in at build time -- not source, a
-# generated artifact of a different repo.
-/static/play-demo
+# generated artifact of a different repo. build.gleam renames the
+# unhashed play-demo/ to a content-hashed play-demo-<hash>/ in place
+# (RM-024) -- the glob covers both the pre- and post-rename name.
+/static/play-demo*

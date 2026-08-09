@@ -4,10 +4,11 @@
 //// embedded demo, is the actual design here.
 ////
 //// Each card links straight to glemy's own real build output (copied
-//// into the site's static assets at `/play-demo/` -- see
-//// `.github/workflows/deploy.yml`) in a new tab, rather than embedding
-//// it in an iframe on this page: the game is its own genuinely
-//// self-contained, playable thing, not a preview of one.
+//// into the site's static assets under a content-hashed
+//// `/play-demo-<hash>/` directory -- see `.github/workflows/deploy.yml`
+//// and `build.gleam`) in a new tab, rather than embedding it in an
+//// iframe on this page: the game is its own genuinely self-contained,
+//// playable thing, not a preview of one.
 
 import glemy_website/game_card
 import glemy_website/layout
@@ -15,12 +16,17 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
-pub fn view(base_url: String) -> Element(a) {
+pub fn view(
+  base_url: String,
+  style_hash: String,
+  play_demo_path: String,
+) -> Element(a) {
   layout.page(
     base_url: base_url,
     path: "/play",
     title: "Games",
     description: "Games built with glemy, playable right now in your browser.",
+    style_hash: style_hash,
     content: [
       html.section([attribute.class("games-index")], [
         html.h1([], [html.text("Games")]),
@@ -31,7 +37,7 @@ pub fn view(base_url: String) -> Element(a) {
         ]),
         html.div(
           [attribute.class("game-card-list")],
-          game_card.catalog(base_url),
+          game_card.catalog(base_url, play_demo_path),
         ),
       ]),
     ],

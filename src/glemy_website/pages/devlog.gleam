@@ -20,12 +20,17 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
-pub fn index(all: List(Decision), base_url: String) -> Element(a) {
+pub fn index(
+  all: List(Decision),
+  base_url: String,
+  style_hash: String,
+) -> Element(a) {
   layout.page(
     base_url: base_url,
     path: "/devlog",
     title: "Devlog",
     description: "Every real architectural decision behind glemy, in order — including the ones that didn't work.",
+    style_hash: style_hash,
     content: [
       html.section([attribute.class("devlog-index")], [
         html.h1([], [html.text("Devlog")]),
@@ -52,6 +57,7 @@ pub fn category_page(
   category: String,
   entries: List(Decision),
   base_url: String,
+  style_hash: String,
 ) -> Element(a) {
   layout.page(
     base_url: base_url,
@@ -62,6 +68,7 @@ pub fn category_page(
       <> " decision behind glemy ("
       <> int.to_string(list.length(entries))
       <> " entries).",
+    style_hash: style_hash,
     content: [
       html.section([attribute.class("devlog-index")], [
         html.p([attribute.class("devlog-entry-back")], [
@@ -169,12 +176,17 @@ fn entry_summary(decision: Decision, base_url: String) -> Element(a) {
   ])
 }
 
-pub fn entry(decision: Decision, base_url: String) -> Element(a) {
+pub fn entry(
+  decision: Decision,
+  base_url: String,
+  style_hash: String,
+) -> Element(a) {
   layout.page(
     base_url: base_url,
     path: entry_path(decision),
     title: "#" <> decision.id <> " — " <> decision.title,
     description: decision.title,
+    style_hash: style_hash,
     content: [
       html.article([attribute.class("devlog-entry")], [
         html.p([attribute.class("devlog-entry-back")], [

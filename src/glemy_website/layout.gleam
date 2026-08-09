@@ -18,11 +18,19 @@ import lustre/ssg/opengraph
 /// `path` is this page's own route (e.g. `/devlog/0041.html`) --
 /// together they're `url(base_url, path)` (see below), used both for
 /// internal navigation and for this page's canonical/OpenGraph URL.
+///
+/// `style_hash` is `style.css`'s current content hash (see
+/// `glemy_website/asset_hash`, computed once in `build.gleam`) --
+/// content-derived filenames close the risk of a visitor's browser
+/// serving a stale cached stylesheet against a freshly deployed page
+/// during the several-second window a deploy is in flight
+/// (`docs/technical-architecture.md` §3.3, RM-024).
 pub fn page(
   base_url base_url: String,
   path path: String,
   title title: String,
   description description: String,
+  style_hash style_hash: String,
   content content: List(Element(a)),
 ) -> Element(a) {
   html.html([attribute.lang("en")], [
@@ -31,7 +39,7 @@ pub fn page(
       list.append(common_head_tags(base_url, path, title, description), [
         html.link([
           attribute.rel("stylesheet"),
-          attribute.href(url(base_url, "/style.css")),
+          attribute.href(stylesheet_url(base_url, style_hash)),
         ]),
         favicon(),
       ]),
@@ -65,6 +73,14 @@ pub fn page(
 /// (e.g. `https://recregt.github.io/glemy-website`) in CI.
 pub fn url(base_url: String, path: String) -> String {
   base_url <> path
+}
+
+/// `style.<hash>.css`'s full URL -- the one place that filename
+/// convention (see `asset_hash.hashed_filename`) is spelled out, so it
+/// can't drift out of sync with wherever `build.gleam` actually
+/// publishes the hashed file.
+pub fn stylesheet_url(base_url: String, style_hash: String) -> String {
+  url(base_url, "/style." <> style_hash <> ".css")
 }
 
 /// The `<meta charset>`/viewport/description/title/canonical/OpenGraph

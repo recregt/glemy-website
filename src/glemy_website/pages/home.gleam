@@ -4,12 +4,17 @@ import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 
-pub fn view(base_url: String) -> Element(a) {
+pub fn view(
+  base_url: String,
+  style_hash: String,
+  play_demo_path: String,
+) -> Element(a) {
   layout.page(
     base_url: base_url,
     path: "/",
     title: "Home",
     description: "glemy is a type-safe game engine written in Gleam, built to run any genre and proven one real game at a time.",
+    style_hash: style_hash,
     content: [
       html.section([attribute.class("hero")], [
         html.h1([], [
@@ -58,7 +63,7 @@ pub fn view(base_url: String) -> Element(a) {
           ),
         ]),
         html.div([attribute.class("game-card-list")], [
-          game_card.tiers_card(base_url),
+          game_card.tiers_card(base_url, play_demo_path),
         ]),
         html.p([], [
           html.text("More games, in different genres, are next — tracked, not just promised, in the "),

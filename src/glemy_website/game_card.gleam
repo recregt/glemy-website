@@ -50,7 +50,16 @@ pub fn icon() -> Element(a) {
   )
 }
 
-pub fn tiers_card(base_url: String) -> Element(a) {
+/// `play_demo_path` is the (content-hashed, see `asset_hash` and
+/// `build.gleam`) directory glemy's real build output was published
+/// under, e.g. `/play-demo-a1b2c3d4` -- content-hashing the whole
+/// directory as one unit, rather than each file inside it, keeps every
+/// file's own relative import path (this is a bundler-free, raw-ESM
+/// build -- decision 0003) untouched, while still giving a visitor's
+/// browser a filename that changes whenever the build actually does
+/// (`docs/technical-architecture.md` §3.3, RM-024).
+pub fn tiers_card(base_url: String, play_demo_path: String) -> Element(a) {
+  let play_url = base_url <> play_demo_path <> "/index.html"
   html.div([attribute.class("game-card")], [
     icon(),
     html.div([attribute.class("game-card-body")], [
@@ -65,7 +74,7 @@ pub fn tiers_card(base_url: String) -> Element(a) {
       ]),
       html.a(
         [
-          attribute.href(base_url <> "/play-demo/index.html"),
+          attribute.href(play_url),
           attribute.target("_blank"),
           attribute.class("button button-primary game-card-play"),
         ],
@@ -78,6 +87,6 @@ pub fn tiers_card(base_url: String) -> Element(a) {
 /// The full catalog -- today, one card. Kept as its own function so a
 /// second game is a second entry in this list, not a restructure of
 /// whatever page renders it.
-pub fn catalog(base_url: String) -> List(Element(a)) {
-  [tiers_card(base_url)]
+pub fn catalog(base_url: String, play_demo_path: String) -> List(Element(a)) {
+  [tiers_card(base_url, play_demo_path)]
 }

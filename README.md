@@ -26,8 +26,18 @@ mismatch, and direct precedent from `bevyengine/bevy-website`,
   why.
 - The **live demo is glemy's own real build** (`gleam build --target
   javascript` + `index.html`, copied in at build time), not a
-  reimplementation — embedded via an iframe at `/play`, since it's a
-  genuinely separate, self-contained HTML document.
+  reimplementation — linked from a game card on `/play` (opens in a new
+  tab), not embedded in an iframe: it's a genuinely separate,
+  self-contained, playable thing, and the catalog is shaped to hold
+  more than one game as more genres land.
+- **Built static assets are content-hashed** (`style.css` as a single
+  file; glemy's whole demo build as one renamed directory, since its
+  files import each other by relative path and a bundler-free build
+  can't have per-file hashing rewrite those — see
+  `glemy_website/asset_hash` and `build.gleam`) — closes the risk of a
+  visitor's browser serving a stale cached asset against a freshly
+  deployed page during a deploy's several-second window
+  (`docs/technical-architecture.md` §3.3, RM-024).
 - The **roadmap renders `glemy`'s own `docs/development-plan.jsonl`
   directly** (also fetched at build time), same reasoning as the
   devlog — a status-tracked (`planned`/`in_progress`/`completed`/
@@ -73,7 +83,11 @@ gleam deps download
 gleam test
 gleam run -m build   # generates ./dist -- internal links are root-relative
                       # by default (GLEMY_WEBSITE_BASE_URL unset), correct
-                      # for local serving
+                      # for local serving. Also content-hashes style.css
+                      # (source at assets/style.css, not static/) and
+                      # renames static/play-demo/ to static/play-demo-<hash>/
+                      # in place -- rerunning without recopying the demo
+                      # reuses whatever's already there.
 
 # Serve it locally:
 deno run --allow-net --allow-read jsr:@std/http/file-server dist
