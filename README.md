@@ -1,14 +1,17 @@
 # glemy-website
 
 The source for [glemy](https://github.com/recregt/glemy)'s public
-website: goals, devlog, and a live demo of the current preview game.
+website: goals, devlog, and a live demo catalog of its reference games
+(Tiers, Breakout, Platformer — from
+[glemy-games](https://github.com/recregt/glemy-games)).
 
-Deliberately a **separate repository** from `glemy` itself — see
-glemy's `ARCHITECTURE.md` and `docs/decisions.jsonl` for the full,
-researched reasoning (release-cadence mismatch, deployment-target
-mismatch, and direct precedent from `bevyengine/bevy-website`,
-`godotengine/godot-website`, `gleam-lang/website`, and
-`raysan5/raylib.com`, all separate from their engine/compiler repos).
+Deliberately a **separate repository** from both `glemy` and
+`glemy-games` — see glemy's `ARCHITECTURE.md` and `docs/decisions.jsonl`
+for the full, researched reasoning (release-cadence mismatch,
+deployment-target mismatch, and direct precedent from
+`bevyengine/bevy-website`, `godotengine/godot-website`,
+`gleam-lang/website`, and `raysan5/raylib.com`, all separate from their
+engine/compiler repos).
 
 ## Stack
 
@@ -24,23 +27,23 @@ mismatch, and direct precedent from `bevyengine/bevy-website`,
   than being a separately hand-maintained blog — glemy's decision log
   already is a structured, dated, reasoned record of what was built and
   why.
-- The **live demo is glemy's own real build** (`gleam build --target
-  javascript` + `index.html`, copied in at build time), not a
-  reimplementation — linked from a game card on `/play` (opens in a new
-  tab), not embedded in an iframe: it's a genuinely separate,
-  self-contained, playable thing, and the catalog is shaped to hold
-  more than one game as more genres land.
-- **Two release channels for the live demo** (`docs/technical-architecture.md`
-  §3.4, RM-025): the primary "Play Tiers" button is `STABLE_GLEMY_REF`
-  (a pinned glemy commit, promoted only by a deliberate commit updating
-  that file) — an "edge" link next to it always tracks glemy's default
-  branch directly. Both are built and content-hashed independently
-  every deploy; promoting stable is a `glemy-website` commit, not an
-  automatic consequence of a glemy push.
+- The **live demo catalog is glemy-games' own real build** (`gleam
+  build --target javascript` + each game's own HTML entry point, copied
+  in at build time — building `glemy-games` transitively builds `glemy`
+  too, via `glemy-games`' own Hex dependency on it), not a
+  reimplementation — each game links from its own card on `/play`
+  (opens in a new tab), not embedded in an iframe: a genuinely separate,
+  self-contained, playable thing per game.
+- **Two release channels per game** (`docs/technical-architecture.md`
+  §3.4, RM-025): each game's card links a pinned "stable" build —
+  `STABLE_GLEMY_GAMES_REF` (a `glemy-games` commit, auto-promoted once
+  that commit's own CI passes, decision 0057) — and an "edge" build that
+  always tracks `glemy-games`' default branch directly. Both are built
+  and content-hashed independently every deploy.
 - **Built static assets are content-hashed** (`style.css` as a single
-  file; glemy's whole demo build as one renamed directory, since its
-  files import each other by relative path and a bundler-free build
-  can't have per-file hashing rewrite those — see
+  file; each game's whole demo build as one renamed directory per
+  game/channel, since its files import each other by relative path and
+  a bundler-free build can't have per-file hashing rewrite those — see
   `glemy_website/asset_hash` and `build.gleam`) — closes the risk of a
   visitor's browser serving a stale cached asset against a freshly
   deployed page during a deploy's several-second window
@@ -79,17 +82,25 @@ once `0.12.0` (or later) is actually published.
 ## Local development
 
 ```sh
-# Fetch the devlog/roadmap content and build glemy's demo once, locally.
-# Locally there's no separate "stable" checkout to build from, so both
-# channels are just populated from the same local build -- the
-# stable/edge distinction only means something in CI, where each
-# channel is checked out from a genuinely different glemy ref.
+# Fetch the devlog/roadmap content from glemy, and build glemy-games'
+# demos once, locally. Locally there's no separate "stable" checkout to
+# build from, so both channels are just populated from the same local
+# build -- the stable/edge distinction only means something in CI,
+# where each channel is checked out from a genuinely different
+# glemy-games ref.
 cp ../glemy/docs/decisions.jsonl decisions.jsonl
 cp ../glemy/docs/development-plan.jsonl development-plan.jsonl
+(cd ../glemy-games && gleam deps download && gleam build --target javascript)
 for channel in stable edge; do
   mkdir -p "static/play-demo-$channel/build/dev"
-  cp ../glemy/index.html "static/play-demo-$channel/index.html"
-  cp -r ../glemy/build/dev/javascript "static/play-demo-$channel/build/dev/javascript"
+  cp ../glemy-games/index.html "static/play-demo-$channel/index.html"
+  cp -r ../glemy-games/build/dev/javascript "static/play-demo-$channel/build/dev/javascript"
+  mkdir -p "static/play-demo-breakout-$channel/build/dev"
+  cp ../glemy-games/breakout.html "static/play-demo-breakout-$channel/index.html"
+  cp -r ../glemy-games/build/dev/javascript "static/play-demo-breakout-$channel/build/dev/javascript"
+  mkdir -p "static/play-demo-platformer-$channel/build/dev"
+  cp ../glemy-games/platformer.html "static/play-demo-platformer-$channel/index.html"
+  cp -r ../glemy-games/build/dev/javascript "static/play-demo-platformer-$channel/build/dev/javascript"
 done
 
 gleam deps download
@@ -110,23 +121,33 @@ deno run --allow-net --allow-read jsr:@std/http/file-server dist
 ## Deployment
 
 Fully automated — see `.github/workflows/deploy.yml`. Runs on every
-push to `main`, once daily (glemy can change without a corresponding
-push here, since the repos are separate), and on manual dispatch.
+push to `main`, once daily (`glemy`/`glemy-games` can change without a
+corresponding push here, since all three repos are separate), and on
+manual dispatch. Checks out `glemy` once (for devlog/roadmap content
+only) and `glemy-games` twice (edge and stable); building `glemy-games`
+transitively builds `glemy` too, via its own Hex dependency.
 
 ## Promoting a new stable build
 
-`STABLE_GLEMY_REF` (repo root, one line) names the glemy commit the
-public-facing `/play` demo is currently pinned to. To promote a newer
-glemy commit to stable:
+Automatic, not manual (decision 0057; see
+`.github/workflows/promote-stable.yml`): an hourly scheduled job polls
+`glemy-games`' own CI and, once a `main` commit's own `gleam build`/
+`gleam test` (both targets) actually pass, bumps `STABLE_GLEMY_GAMES_REF`
+(repo root, one line — the `glemy-games` commit the public-facing
+`/play` demos are currently pinned to) to that commit and dispatches
+`deploy.yml` directly. Never promotes an untested or failing commit.
+
+A manual promotion is still possible if needed (e.g. to roll back to an
+earlier known-good commit ahead of the next scheduled poll):
 
 ```sh
-echo "<glemy commit sha>" > STABLE_GLEMY_REF
-git commit -am "Promote glemy <short sha> to the stable demo channel"
+echo "<glemy-games commit sha>" > STABLE_GLEMY_GAMES_REF
+git commit -am "Promote glemy-games <short sha> to the stable demo channel"
 git push
 ```
 
-The next deploy checks out glemy at that ref for the stable build
-(`glemy-edge` always checks out glemy's default branch regardless, for
-the edge build and for devlog/roadmap content). Never edit this file
+The next deploy checks out `glemy-games` at that ref for the stable
+build (the edge build, and devlog/roadmap content from `glemy`, always
+track each repo's own default branch regardless). Never edit this file
 without committing it — an uncommitted change has no effect once the
 next CI run does a fresh checkout.
