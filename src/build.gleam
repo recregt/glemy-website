@@ -60,6 +60,12 @@ fn run() -> Result(Nil, String) {
   use #(style_hash, style_content) <- result.try(load_style_asset())
   use stable_path <- result.try(prepare_play_demo_dir("play-demo-stable"))
   use edge_path <- result.try(prepare_play_demo_dir("play-demo-edge"))
+  use breakout_stable_path <- result.try(
+    prepare_play_demo_dir("play-demo-breakout-stable"),
+  )
+  use breakout_edge_path <- result.try(
+    prepare_play_demo_dir("play-demo-breakout-edge"),
+  )
 
   let by_id =
     dict.from_list(list.map(decisions, fn(decision) { #(decision.id, decision) }))
@@ -67,6 +73,8 @@ fn run() -> Result(Nil, String) {
   let base_url = env_base_url()
   let style_filename = asset_hash.hashed_filename("style.css", style_hash)
   let demo = game_card.DemoPaths(stable: stable_path, edge: edge_path)
+  let breakout_demo =
+    game_card.DemoPaths(stable: breakout_stable_path, edge: breakout_edge_path)
 
   ssg.new("./dist")
   |> ssg.add_static_dir("./static")
@@ -82,7 +90,10 @@ fn run() -> Result(Nil, String) {
     by_category,
     category_page(_, base_url, style_hash),
   )
-  |> ssg.add_static_route("/play", play.view(base_url, style_hash, demo))
+  |> ssg.add_static_route(
+    "/play",
+    play.view(base_url, style_hash, demo, breakout_demo),
+  )
   |> ssg.add_static_route(
     "/roadmap",
     roadmap.view(base_url, roadmap_entries, style_hash),

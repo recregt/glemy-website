@@ -89,6 +89,13 @@ jobs:
       # server already serves directly from a glemy repo root. Two
       # separate unhashed directories; build.gleam content-hashes and
       # renames each independently (RM-024).
+      #
+      # Breakout (glemy's second reference game, decisions 0052/0053)
+      # gets its own pair of directories, renaming breakout.html to
+      # index.html on copy the same way -- each demo dir needs its own
+      # full copy of build/dev/javascript (not a shared one) because
+      # build.gleam's prepare_play_demo_dir renames the whole directory
+      # in place per demo, and a directory can only be renamed once.
       - name: Copy the live demo builds into static assets
         run: |
           mkdir -p static/play-demo-edge/build/dev
@@ -98,6 +105,14 @@ jobs:
           mkdir -p static/play-demo-stable/build/dev
           cp glemy-stable/index.html static/play-demo-stable/index.html
           cp -r glemy-stable/build/dev/javascript static/play-demo-stable/build/dev/javascript
+
+          mkdir -p static/play-demo-breakout-edge/build/dev
+          cp glemy-edge/breakout.html static/play-demo-breakout-edge/index.html
+          cp -r glemy-edge/build/dev/javascript static/play-demo-breakout-edge/build/dev/javascript
+
+          mkdir -p static/play-demo-breakout-stable/build/dev
+          cp glemy-stable/breakout.html static/play-demo-breakout-stable/index.html
+          cp -r glemy-stable/build/dev/javascript static/play-demo-breakout-stable/build/dev/javascript
 
       - name: Setup Pages
         id: pages

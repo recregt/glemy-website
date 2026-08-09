@@ -1,7 +1,7 @@
-//// The games catalog. One entry today (`glemy_website/game_card`'s
-//// `catalog`), shaped to hold more without a rewrite -- see that
-//// module's own doc comment for why a growing catalog, not a single
-//// embedded demo, is the actual design here.
+//// The games catalog (`glemy_website/game_card`'s `catalog`) -- Tiers
+//// and Breakout today, shaped to hold more without a rewrite -- see
+//// that module's own doc comment for why a growing catalog, not a
+//// single embedded demo, is the actual design here.
 ////
 //// Each card links straight to glemy's own real build output (copied
 //// into the site's static assets under a content-hashed
@@ -20,7 +20,8 @@ import lustre/element/html
 pub fn view(
   base_url: String,
   style_hash: String,
-  demo: DemoPaths,
+  tiers_demo: DemoPaths,
+  breakout_demo: DemoPaths,
 ) -> Element(a) {
   layout.page(
     base_url: base_url,
@@ -38,7 +39,7 @@ pub fn view(
         ]),
         html.div(
           [attribute.class("game-card-list")],
-          game_card.catalog(base_url, demo),
+          game_card.catalog(base_url, tiers_demo, breakout_demo),
         ),
       ]),
     ],
