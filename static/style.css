@@ -77,20 +77,28 @@ a:hover {
   margin: 0 auto;
 }
 
+.site-footer p.site-footer-tagline {
+  color: var(--fg);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
 .hero {
   text-align: center;
   padding: 2rem 0 3rem;
 }
 
 .hero h1 {
-  font-size: 3rem;
-  margin: 0 0 0.5rem;
+  font-size: 2.5rem;
+  line-height: 1.25;
+  max-width: 32rem;
+  margin: 0 auto 1rem;
 }
 
 .hero-tagline {
   color: var(--fg-dim);
-  font-size: 1.15rem;
-  max-width: 34rem;
+  font-size: 1.1rem;
+  max-width: 38rem;
   margin: 0 auto 2rem;
 }
 
@@ -118,6 +126,14 @@ a:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+.prose-section {
+  margin-top: 3rem;
+}
+
+.prose-section p {
+  margin-bottom: 1rem;
 }
 
 .goals-list {
@@ -208,22 +224,57 @@ a:hover {
   font-size: 0.9rem;
 }
 
-.play-main h1 {
-  margin-bottom: 0.5rem;
+.games-intro {
+  color: var(--fg-dim);
 }
 
-.play-frame {
-  display: block;
-  width: 100%;
-  max-width: 512px;
-  aspect-ratio: 1 / 1;
+.game-card-list {
+  display: grid;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.game-card {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.5rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-top: 1.5rem;
+  border-radius: 12px;
+  background: var(--bg-raised);
 }
 
-.play-open-tab {
-  font-size: 0.9rem;
+.game-card-icon {
+  width: 5rem;
+  height: 5rem;
+  flex-shrink: 0;
+}
+
+.game-card-body h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.3rem;
+}
+
+.game-card-tagline {
+  margin: 0 0 0.5rem;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.game-card-description {
+  margin: 0 0 1rem;
+  color: var(--fg-dim);
+}
+
+.game-card-play {
+  display: inline-block;
+}
+
+@media (max-width: 30rem) {
+  .game-card {
+    flex-direction: column;
+    text-align: center;
+  }
 }
 
 .devlog-category-filter {

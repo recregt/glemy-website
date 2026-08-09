@@ -144,7 +144,7 @@ fn nav(base_url: String) -> Element(a) {
         html.a([attribute.href(url(base_url, "/"))], [html.text("Home")]),
         html.a([attribute.href(url(base_url, "/devlog"))], [html.text("Devlog")]),
         html.a([attribute.href(url(base_url, "/roadmap"))], [html.text("Roadmap")]),
-        html.a([attribute.href(url(base_url, "/play"))], [html.text("Play")]),
+        html.a([attribute.href(url(base_url, "/play"))], [html.text("Games")]),
         html.a([attribute.href("https://github.com/recregt/glemy")], [
           html.text("GitHub"),
         ]),
@@ -155,16 +155,19 @@ fn nav(base_url: String) -> Element(a) {
 
 fn footer() -> Element(a) {
   html.footer([attribute.class("site-footer")], [
+    html.p([attribute.class("site-footer-tagline")], [
+      html.text("One engine. Every genre. Nothing hidden."),
+    ]),
     html.p([], [
-      html.text("glemy is built in the open — every decision, including the "),
+      html.text("Every decision — including the "),
       html.a([attribute.href("https://github.com/recregt/glemy/blob/main/docs/decisions.jsonl")], [
         html.text("ones that didn't work"),
       ]),
-      html.text(", is on the "),
+      html.text(" — is public on the "),
       html.a([attribute.href("https://github.com/recregt/glemy")], [
         html.text("Devlog"),
       ]),
-      html.text("."),
+      html.text(". No closed roadmap, no surprise pivots."),
     ]),
   ])
 }
