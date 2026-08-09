@@ -276,42 +276,109 @@ a:hover {
   font-family: ui-monospace, monospace;
 }
 
-/* Roadmap page: rendered from glemy's own docs/development-plan.md via
-   lustre_ssg's djot renderer, so headings/lists/code below aren't
-   scoped under a devlog-* class -- they're the direct output of that
-   default renderer (see glemy_website/pages/roadmap). */
-.site-main h2 {
-  margin-top: 2.5rem;
-}
-
-.site-main pre {
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1rem;
-  overflow-x: auto;
-}
-
 .site-main code {
   font-family: ui-monospace, monospace;
   font-size: 0.9em;
-}
-
-.site-main :not(pre) > code {
   background: var(--bg-raised);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
 }
 
-.site-main blockquote {
-  margin: 0;
-  padding-left: 1rem;
-  border-left: 3px solid var(--border);
+/* Roadmap page: rendered from glemy's own docs/development-plan.jsonl,
+   structured items grouped by phase (see glemy_website/pages/roadmap). */
+.roadmap-intro {
   color: var(--fg-dim);
 }
 
-.site-main hr {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 2.5rem 0;
+.roadmap-phase {
+  margin-top: 2.5rem;
+}
+
+.roadmap-item-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.roadmap-item {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.25rem;
+}
+
+.roadmap-item-header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.roadmap-item-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.roadmap-item-id {
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+.roadmap-item-description {
+  color: var(--fg-dim);
+  margin: 0;
+}
+
+.roadmap-item-resolution {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+}
+
+.roadmap-ref {
+  margin-right: 0.5rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+}
+
+.roadmap-status {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.roadmap-status-planned {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-dim);
+}
+
+.roadmap-status-in_progress {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.roadmap-status-completed {
+  background: #1d3a24;
+  color: #4caf50;
+}
+
+.roadmap-status-deferred {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-dim);
+}
+
+.roadmap-status-superseded {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-dim);
+  text-decoration: line-through;
 }

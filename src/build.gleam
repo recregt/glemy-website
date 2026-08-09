@@ -1,6 +1,6 @@
 //// The static site generator entry point. Run with `gleam run -m build`
 //// (matching lustre_ssg's own documented convention) -- reads
-//// `decisions.jsonl` and `development-plan.md` (both fetched from
+//// `decisions.jsonl` and `development-plan.jsonl` (both fetched from
 //// glemy's own repo before this runs; see
 //// `.github/workflows/deploy.yml`) from the project root, and
 //// `static/` (glemy's live demo build gets copied into
@@ -32,6 +32,7 @@ import glemy_website/pages/devlog
 import glemy_website/pages/home
 import glemy_website/pages/play
 import glemy_website/pages/roadmap
+import glemy_website/roadmap_items.{type RoadmapItem}
 import glemy_website/sitemap
 import lustre/element
 import lustre/ssg
@@ -52,7 +53,7 @@ pub fn main() -> Nil {
 
 fn run() -> Result(Nil, String) {
   use decisions <- result.try(load_decisions())
-  use plan_markdown <- result.try(load_development_plan())
+  use roadmap_entries <- result.try(load_roadmap_items())
 
   let by_id =
     dict.from_list(list.map(decisions, fn(decision) { #(decision.id, decision) }))
@@ -70,7 +71,7 @@ fn run() -> Result(Nil, String) {
     category_page(_, base_url),
   )
   |> ssg.add_static_route("/play", play.view(base_url))
-  |> ssg.add_static_route("/roadmap", roadmap.view(base_url, plan_markdown))
+  |> ssg.add_static_route("/roadmap", roadmap.view(base_url, roadmap_entries))
   |> ssg.add_static_xml("/sitemap", sitemap.build(decisions, base_url))
   |> ssg.add_static_xml("/feed", feed.build(decisions, base_url))
   |> ssg.add_static_asset("/robots.txt", robots_txt(base_url))
@@ -108,11 +109,14 @@ fn load_decisions() -> Result(List(Decision), String) {
   decisions.parse_all(contents)
 }
 
-fn load_development_plan() -> Result(String, String) {
-  simplifile.read("./development-plan.md")
-  |> result.map_error(fn(error) {
-    "could not read development-plan.md: " <> string.inspect(error)
-  })
+fn load_roadmap_items() -> Result(List(RoadmapItem), String) {
+  use contents <- result.try(
+    simplifile.read("./development-plan.jsonl")
+    |> result.map_error(fn(error) {
+      "could not read development-plan.jsonl: " <> string.inspect(error)
+    }),
+  )
+  roadmap_items.parse_all(contents)
 }
 
 @external(erlang, "erlang", "halt")

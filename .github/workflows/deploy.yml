@@ -51,10 +51,10 @@ jobs:
           gleam deps download
           gleam test
 
-      - name: Fetch decisions.jsonl and development-plan.md from glemy
+      - name: Fetch decisions.jsonl and development-plan.jsonl from glemy
         run: |
           cp glemy/docs/decisions.jsonl decisions.jsonl
-          cp glemy/docs/development-plan.md development-plan.md
+          cp glemy/docs/development-plan.jsonl development-plan.jsonl
 
       - name: Build glemy's JavaScript target (the live demo)
         working-directory: glemy

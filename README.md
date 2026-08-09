@@ -28,8 +28,15 @@ mismatch, and direct precedent from `bevyengine/bevy-website`,
   javascript` + `index.html`, copied in at build time), not a
   reimplementation — embedded via an iframe at `/play`, since it's a
   genuinely separate, self-contained HTML document.
-- The **roadmap renders `glemy`'s own `docs/development-plan.md`
-  directly** (also fetched at build time), same reasoning as the devlog.
+- The **roadmap renders `glemy`'s own `docs/development-plan.jsonl`
+  directly** (also fetched at build time), same reasoning as the
+  devlog — a status-tracked (`planned`/`in_progress`/`completed`/
+  `deferred`/`superseded`) list of roadmap items, not prose. Structured
+  data decoded the same way `decisions.jsonl` already is, rather than
+  markdown piped through `lustre_ssg`'s djot renderer — an earlier,
+  markdown-based version of this page hit real renderer limitations
+  (no table support, `**bold**` vs. djot's `*bold*`) that structured
+  data sidesteps entirely.
 - The **devlog is filterable by category** (`/devlog/category/<name>`) —
   every `Decision` already carries one; tags aren't built into their own
   pages, since almost all of the 85 real tag values are used exactly
@@ -57,7 +64,7 @@ once `0.12.0` (or later) is actually published.
 ```sh
 # Fetch the devlog/roadmap content and build glemy's demo once, locally:
 cp ../glemy/docs/decisions.jsonl decisions.jsonl
-cp ../glemy/docs/development-plan.md development-plan.md
+cp ../glemy/docs/development-plan.jsonl development-plan.jsonl
 mkdir -p static/play-demo/build/dev
 cp ../glemy/index.html static/play-demo/index.html
 cp -r ../glemy/build/dev/javascript static/play-demo/build/dev/javascript
