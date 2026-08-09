@@ -16,6 +16,8 @@
 //// palette at increasing radii (small tiers merge into bigger ones);
 //// Breakout's paddle/ball/bricks are the exact `#5af`/white/`#fa5`
 //// colors `breakout.html`'s own CSS and `games/breakout.ball_color`
+//// use; Platformer's platforms/goal/player are the exact `#8a5`/`#fd5`
+//// colors `platformer.html`'s own CSS and `games/platformer.player_color`
 //// use.
 
 import lustre/attribute.{attribute}
@@ -93,14 +95,54 @@ pub fn breakout_icon() -> Element(a) {
   )
 }
 
+pub fn platformer_icon() -> Element(a) {
+  svg.svg(
+    [
+      attribute("viewBox", "0 0 100 100"),
+      attribute.class("game-card-icon"),
+      attribute("aria-hidden", "true"),
+    ],
+    [
+      svg.rect([
+        attribute("x", "8"),
+        attribute("y", "78"),
+        attribute("width", "38"),
+        attribute("height", "12"),
+        attribute("fill", "rgb(136, 170, 85)"),
+      ]),
+      svg.rect([
+        attribute("x", "40"),
+        attribute("y", "50"),
+        attribute("width", "32"),
+        attribute("height", "12"),
+        attribute("fill", "rgb(136, 170, 85)"),
+      ]),
+      svg.rect([
+        attribute("x", "70"),
+        attribute("y", "18"),
+        attribute("width", "24"),
+        attribute("height", "12"),
+        attribute("fill", "rgb(255, 221, 85)"),
+      ]),
+      svg.circle([
+        attribute("cx", "22"),
+        attribute("cy", "70"),
+        attribute("r", "8"),
+        attribute("fill", "rgb(51, 255, 77)"),
+      ]),
+    ],
+  )
+}
+
 /// The two release channels a game's live demo is published under
 /// (`docs/technical-architecture.md` §3.4, RM-025): `stable` is a
-/// pinned build, only updated by a deliberate commit to
-/// `STABLE_GLEMY_REF`, not automatically by every glemy push; `edge`
-/// always tracks glemy's default branch directly. Both are
-/// content-hashed directory paths (e.g. `/play-demo-stable-a1b2c3d4`),
-/// computed in `build.gleam` -- see `asset_hash` and RM-024 for why a
-/// whole directory, not each file inside it, gets hashed as one unit.
+/// pinned build, promoted automatically once a glemy commit's own CI
+/// passes (decision 0057 -- superseded the original manual-only
+/// promotion), never an untested or failing one; `edge` always tracks
+/// glemy's default branch directly. Both are content-hashed directory
+/// paths (e.g. `/play-demo-stable-a1b2c3d4`), computed in `build.gleam`
+/// -- see `asset_hash` and RM-024 for why a whole directory, not each
+/// file inside it, gets hashed as one unit.
 pub type DemoPaths {
   DemoPaths(stable: String, edge: String)
 }
@@ -173,15 +215,32 @@ pub fn breakout_card(base_url: String, demo: DemoPaths) -> Element(a) {
   )
 }
 
+pub fn platformer_card(base_url: String, demo: DemoPaths) -> Element(a) {
+  game_card(
+    base_url,
+    demo,
+    platformer_icon(),
+    "Platformer",
+    "Jump. Climb. Reach the goal.",
+    "glemy's third reference game, built specifically to test whether one wall/landing physics policy could serve every genre -- it can't (confirmed a third distinct way, decisions 0052/0058/0059/0060). Move, jump, and climb a platform staircase to the goal. Runs live via WebGPU, right in your browser.",
+  )
+}
+
 /// The full catalog. Each game supplies its own `DemoPaths` (stable/edge
 /// are built independently per game -- see `build.gleam`'s
-/// `prepare_play_demo_dir` calls), so a third game is a third parameter
-/// and a third list entry, not a restructure of whatever page renders
-/// this.
+/// `prepare_play_demo_dir` calls), so a fourth game is a fourth
+/// parameter and a fourth list entry, not a restructure of whatever
+/// page renders this -- confirmed by this third real addition needing
+/// no changes to `game_card` itself, only a new call site.
 pub fn catalog(
   base_url: String,
   tiers_demo: DemoPaths,
   breakout_demo: DemoPaths,
+  platformer_demo: DemoPaths,
 ) -> List(Element(a)) {
-  [tiers_card(base_url, tiers_demo), breakout_card(base_url, breakout_demo)]
+  [
+    tiers_card(base_url, tiers_demo),
+    breakout_card(base_url, breakout_demo),
+    platformer_card(base_url, platformer_demo),
+  ]
 }

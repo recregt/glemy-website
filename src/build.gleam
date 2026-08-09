@@ -66,6 +66,12 @@ fn run() -> Result(Nil, String) {
   use breakout_edge_path <- result.try(
     prepare_play_demo_dir("play-demo-breakout-edge"),
   )
+  use platformer_stable_path <- result.try(
+    prepare_play_demo_dir("play-demo-platformer-stable"),
+  )
+  use platformer_edge_path <- result.try(
+    prepare_play_demo_dir("play-demo-platformer-edge"),
+  )
 
   let by_id =
     dict.from_list(list.map(decisions, fn(decision) { #(decision.id, decision) }))
@@ -75,6 +81,11 @@ fn run() -> Result(Nil, String) {
   let demo = game_card.DemoPaths(stable: stable_path, edge: edge_path)
   let breakout_demo =
     game_card.DemoPaths(stable: breakout_stable_path, edge: breakout_edge_path)
+  let platformer_demo =
+    game_card.DemoPaths(
+      stable: platformer_stable_path,
+      edge: platformer_edge_path,
+    )
 
   ssg.new("./dist")
   |> ssg.add_static_dir("./static")
@@ -92,7 +103,7 @@ fn run() -> Result(Nil, String) {
   )
   |> ssg.add_static_route(
     "/play",
-    play.view(base_url, style_hash, demo, breakout_demo),
+    play.view(base_url, style_hash, demo, breakout_demo, platformer_demo),
   )
   |> ssg.add_static_route(
     "/roadmap",

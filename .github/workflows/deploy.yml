@@ -46,12 +46,11 @@ jobs:
         run: echo "ref=$(cat STABLE_GLEMY_REF)" >> "$GITHUB_OUTPUT"
 
       # "Stable" is pinned to whatever commit STABLE_GLEMY_REF names --
-      # promoting a new build to the public-facing /play demo is a
-      # deliberate commit updating that file, not an automatic
-      # consequence of a glemy push (docs/technical-architecture.md §3.4,
-      # RM-025). Kept as a genuinely separate checkout (not, e.g., a
-      # git-reset on the edge one) so both builds exist side by side for
-      # the same run.
+      # promoted automatically by promote-stable.yml once a glemy commit's
+      # own CI passes (decision 0057, docs/technical-architecture.md
+      # §3.4, RM-025), never an untested or failing one. Kept as a
+      # genuinely separate checkout (not, e.g., a git-reset on the edge
+      # one) so both builds exist side by side for the same run.
       - name: Checkout glemy (stable)
         uses: actions/checkout@v7
         with:
@@ -90,26 +89,28 @@ jobs:
       # separate unhashed directories; build.gleam content-hashes and
       # renames each independently (RM-024).
       #
-      # Breakout (glemy's second reference game, decisions 0052/0053)
-      # gets its own pair of directories, renaming breakout.html to
-      # index.html on copy the same way -- each demo dir needs its own
-      # full copy of build/dev/javascript (not a shared one) because
-      # build.gleam's prepare_play_demo_dir renames the whole directory
-      # in place per demo, and a directory can only be renamed once.
+      # Each additional game (Breakout, decisions 0052/0053; Platformer,
+      # RM-034/decision 0060) gets its own pair of directories, renaming
+      # its own HTML entry point to index.html on copy the same way --
+      # each demo dir needs its own full copy of build/dev/javascript
+      # (not a shared one) because build.gleam's prepare_play_demo_dir
+      # renames the whole directory in place per demo, and a directory
+      # can only be renamed once.
       #
       # Each game's copy is guarded by a real file-existence check, not
-      # assumed unconditionally: "stable" is a *deliberately* pinned,
-      # lagging checkout (decision 0046/RM-025 -- STABLE_GLEMY_REF only
-      # moves on a deliberate commit, never automatically), so a game
-      # added to glemy after the current pin genuinely has no HTML entry
-      # point yet in glemy-stable. The whole per-demo block (mkdir
-      # included, not just the cp) is skipped in that case -- creating
-      # an empty static/play-demo-breakout-stable/ directory would make
+      # assumed unconditionally: even with promote-stable.yml's automatic
+      # promotion (decision 0057), STABLE_GLEMY_REF can still momentarily
+      # lag a brand new game's own first commit (the promotion runs on
+      # its own schedule, not synchronously with every glemy push), so a
+      # game just added to glemy can genuinely have no HTML entry point
+      # yet in glemy-stable. The whole per-demo block (mkdir included,
+      # not just the cp) is skipped in that case -- creating an empty
+      # static/play-demo-<game>-stable/ directory would make
       # build.gleam's prepare_play_demo_dir see an existing-but-empty
-      # directory and hash/rename that instead of correctly falling
-      # back to its own already-documented "directory doesn't exist"
-      # path (a real, worse failure mode: a demo link that looks built
-      # but serves nothing, instead of a 404 until stable catches up).
+      # directory and hash/rename that instead of correctly falling back
+      # to its own already-documented "directory doesn't exist" path (a
+      # real, worse failure mode: a demo link that looks built but serves
+      # nothing, instead of a 404 until stable catches up).
       - name: Copy the live demo builds into static assets
         run: |
           copy_demo() {
@@ -127,6 +128,8 @@ jobs:
           copy_demo glemy-stable index.html static/play-demo-stable
           copy_demo glemy-edge breakout.html static/play-demo-breakout-edge
           copy_demo glemy-stable breakout.html static/play-demo-breakout-stable
+          copy_demo glemy-edge platformer.html static/play-demo-platformer-edge
+          copy_demo glemy-stable platformer.html static/play-demo-platformer-stable
 
       - name: Setup Pages
         id: pages
