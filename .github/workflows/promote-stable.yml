@@ -25,6 +25,10 @@ on:
 
 permissions:
   contents: write
+  # Needed for the explicit `gh workflow run deploy.yml` dispatch below
+  # -- see that step's own comment for why a plain `git push` alone
+  # doesn't reach deploy.yml here.
+  actions: write
 
 jobs:
   promote:
@@ -45,12 +49,14 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Update STABLE_GLEMY_REF if a newer green commit exists
+        id: update
         if: steps.latest_green.outputs.sha != ''
         run: |
           new="${{ steps.latest_green.outputs.sha }}"
           current="$(cat STABLE_GLEMY_REF)"
           if [ "$current" = "$new" ]; then
             echo "STABLE_GLEMY_REF is already at $new -- nothing to promote."
+            echo "promoted=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "$new" > STABLE_GLEMY_REF
@@ -58,8 +64,18 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add STABLE_GLEMY_REF
           git commit -m "Auto-promote stable to glemy@${new:0:7} (CI passed)"
-          # Pushing to main re-triggers deploy.yml's own push trigger,
-          # which rebuilds/redeploys picking up the newly-promoted ref
-          # -- this workflow only ever updates the pin, deploy.yml
-          # remains the one place that actually builds and publishes.
           git push
+          echo "promoted=true" >> "$GITHUB_OUTPUT"
+
+      # A push made with the default GITHUB_TOKEN deliberately does NOT
+      # trigger other workflows (GitHub's own anti-recursion guard on
+      # push/other native events) -- confirmed directly: the first real
+      # auto-promotion this workflow ever did pushed successfully but
+      # deploy.yml never ran. workflow_dispatch calls are explicitly
+      # exempted from that guard, so this dispatches deploy.yml
+      # directly instead of relying on the push event to do it.
+      - name: Trigger deploy.yml to publish the newly-promoted stable build
+        if: steps.update.outputs.promoted == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml
