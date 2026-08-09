@@ -30,6 +30,13 @@ mismatch, and direct precedent from `bevyengine/bevy-website`,
   tab), not embedded in an iframe: it's a genuinely separate,
   self-contained, playable thing, and the catalog is shaped to hold
   more than one game as more genres land.
+- **Two release channels for the live demo** (`docs/technical-architecture.md`
+  §3.4, RM-025): the primary "Play Tiers" button is `STABLE_GLEMY_REF`
+  (a pinned glemy commit, promoted only by a deliberate commit updating
+  that file) — an "edge" link next to it always tracks glemy's default
+  branch directly. Both are built and content-hashed independently
+  every deploy; promoting stable is a `glemy-website` commit, not an
+  automatic consequence of a glemy push.
 - **Built static assets are content-hashed** (`style.css` as a single
   file; glemy's whole demo build as one renamed directory, since its
   files import each other by relative path and a bundler-free build
@@ -72,12 +79,18 @@ once `0.12.0` (or later) is actually published.
 ## Local development
 
 ```sh
-# Fetch the devlog/roadmap content and build glemy's demo once, locally:
+# Fetch the devlog/roadmap content and build glemy's demo once, locally.
+# Locally there's no separate "stable" checkout to build from, so both
+# channels are just populated from the same local build -- the
+# stable/edge distinction only means something in CI, where each
+# channel is checked out from a genuinely different glemy ref.
 cp ../glemy/docs/decisions.jsonl decisions.jsonl
 cp ../glemy/docs/development-plan.jsonl development-plan.jsonl
-mkdir -p static/play-demo/build/dev
-cp ../glemy/index.html static/play-demo/index.html
-cp -r ../glemy/build/dev/javascript static/play-demo/build/dev/javascript
+for channel in stable edge; do
+  mkdir -p "static/play-demo-$channel/build/dev"
+  cp ../glemy/index.html "static/play-demo-$channel/index.html"
+  cp -r ../glemy/build/dev/javascript "static/play-demo-$channel/build/dev/javascript"
+done
 
 gleam deps download
 gleam test
@@ -85,9 +98,10 @@ gleam run -m build   # generates ./dist -- internal links are root-relative
                       # by default (GLEMY_WEBSITE_BASE_URL unset), correct
                       # for local serving. Also content-hashes style.css
                       # (source at assets/style.css, not static/) and
-                      # renames static/play-demo/ to static/play-demo-<hash>/
-                      # in place -- rerunning without recopying the demo
-                      # reuses whatever's already there.
+                      # renames static/play-demo-{stable,edge}/ to
+                      # static/play-demo-{stable,edge}-<hash>/ in place --
+                      # rerunning without recopying the demo reuses
+                      # whatever's already there.
 
 # Serve it locally:
 deno run --allow-net --allow-read jsr:@std/http/file-server dist
@@ -98,3 +112,21 @@ deno run --allow-net --allow-read jsr:@std/http/file-server dist
 Fully automated — see `.github/workflows/deploy.yml`. Runs on every
 push to `main`, once daily (glemy can change without a corresponding
 push here, since the repos are separate), and on manual dispatch.
+
+## Promoting a new stable build
+
+`STABLE_GLEMY_REF` (repo root, one line) names the glemy commit the
+public-facing `/play` demo is currently pinned to. To promote a newer
+glemy commit to stable:
+
+```sh
+echo "<glemy commit sha>" > STABLE_GLEMY_REF
+git commit -am "Promote glemy <short sha> to the stable demo channel"
+git push
+```
+
+The next deploy checks out glemy at that ref for the stable build
+(`glemy-edge` always checks out glemy's default branch regardless, for
+the edge build and for devlog/roadmap content). Never edit this file
+without committing it — an uncommitted change has no effect once the
+next CI run does a fresh checkout.

@@ -32,13 +32,32 @@ jobs:
       - name: Checkout glemy-website
         uses: actions/checkout@v7
 
-      # A second, separate checkout -- decisions.jsonl and the live
-      # demo build both come from glemy's own repo, not this one.
-      - name: Checkout glemy
+      # "Edge" always tracks glemy's default branch directly -- decisions
+      # and roadmap content are also fetched from here, since those track
+      # main regardless of which build is currently the stable demo.
+      - name: Checkout glemy (edge)
         uses: actions/checkout@v7
         with:
           repository: recregt/glemy
-          path: glemy
+          path: glemy-edge
+
+      - name: Read the pinned stable glemy ref
+        id: stable_ref
+        run: echo "ref=$(cat STABLE_GLEMY_REF)" >> "$GITHUB_OUTPUT"
+
+      # "Stable" is pinned to whatever commit STABLE_GLEMY_REF names --
+      # promoting a new build to the public-facing /play demo is a
+      # deliberate commit updating that file, not an automatic
+      # consequence of a glemy push (docs/technical-architecture.md §3.4,
+      # RM-025). Kept as a genuinely separate checkout (not, e.g., a
+      # git-reset on the edge one) so both builds exist side by side for
+      # the same run.
+      - name: Checkout glemy (stable)
+        uses: actions/checkout@v7
+        with:
+          repository: recregt/glemy
+          path: glemy-stable
+          ref: ${{ steps.stable_ref.outputs.ref }}
 
       - uses: erlef/setup-beam@v1.24.1
         with:
@@ -53,22 +72,32 @@ jobs:
 
       - name: Fetch decisions.jsonl and development-plan.jsonl from glemy
         run: |
-          cp glemy/docs/decisions.jsonl decisions.jsonl
-          cp glemy/docs/development-plan.jsonl development-plan.jsonl
+          cp glemy-edge/docs/decisions.jsonl decisions.jsonl
+          cp glemy-edge/docs/development-plan.jsonl development-plan.jsonl
 
-      - name: Build glemy's JavaScript target (the live demo)
-        working-directory: glemy
+      - name: Build glemy's JavaScript target (edge)
+        working-directory: glemy-edge
         run: gleam deps download && gleam build --target javascript
 
-      # Preserves glemy/index.html's own relative import paths
+      - name: Build glemy's JavaScript target (stable)
+        working-directory: glemy-stable
+        run: gleam deps download && gleam build --target javascript
+
+      # Preserves each checkout's own index.html's relative import paths
       # (./build/dev/javascript/glemy/glemy/*.mjs) exactly, so the
       # copied demo runs unmodified -- the same output the local dev
-      # server already serves directly from the glemy repo root.
-      - name: Copy the live demo into static assets
+      # server already serves directly from a glemy repo root. Two
+      # separate unhashed directories; build.gleam content-hashes and
+      # renames each independently (RM-024).
+      - name: Copy the live demo builds into static assets
         run: |
-          mkdir -p static/play-demo/build/dev
-          cp glemy/index.html static/play-demo/index.html
-          cp -r glemy/build/dev/javascript static/play-demo/build/dev/javascript
+          mkdir -p static/play-demo-edge/build/dev
+          cp glemy-edge/index.html static/play-demo-edge/index.html
+          cp -r glemy-edge/build/dev/javascript static/play-demo-edge/build/dev/javascript
+
+          mkdir -p static/play-demo-stable/build/dev
+          cp glemy-stable/index.html static/play-demo-stable/index.html
+          cp -r glemy-stable/build/dev/javascript static/play-demo-stable/build/dev/javascript
 
       - name: Setup Pages
         id: pages

@@ -30,6 +30,7 @@ import gleam/string
 import glemy_website/asset_hash
 import glemy_website/decisions.{type Decision}
 import glemy_website/feed
+import glemy_website/game_card
 import glemy_website/pages/devlog
 import glemy_website/pages/home
 import glemy_website/pages/play
@@ -57,18 +58,20 @@ fn run() -> Result(Nil, String) {
   use decisions <- result.try(load_decisions())
   use roadmap_entries <- result.try(load_roadmap_items())
   use #(style_hash, style_content) <- result.try(load_style_asset())
-  use play_demo_path <- result.try(prepare_play_demo_dir())
+  use stable_path <- result.try(prepare_play_demo_dir("play-demo-stable"))
+  use edge_path <- result.try(prepare_play_demo_dir("play-demo-edge"))
 
   let by_id =
     dict.from_list(list.map(decisions, fn(decision) { #(decision.id, decision) }))
   let by_category = list.group(decisions, fn(decision) { decision.category })
   let base_url = env_base_url()
   let style_filename = asset_hash.hashed_filename("style.css", style_hash)
+  let demo = game_card.DemoPaths(stable: stable_path, edge: edge_path)
 
   ssg.new("./dist")
   |> ssg.add_static_dir("./static")
   |> ssg.add_static_asset("/" <> style_filename, style_content)
-  |> ssg.add_static_route("/", home.view(base_url, style_hash, play_demo_path))
+  |> ssg.add_static_route("/", home.view(base_url, style_hash, demo))
   |> ssg.add_static_route(
     "/devlog",
     devlog.index(decisions, base_url, style_hash),
@@ -79,10 +82,7 @@ fn run() -> Result(Nil, String) {
     by_category,
     category_page(_, base_url, style_hash),
   )
-  |> ssg.add_static_route(
-    "/play",
-    play.view(base_url, style_hash, play_demo_path),
-  )
+  |> ssg.add_static_route("/play", play.view(base_url, style_hash, demo))
   |> ssg.add_static_route(
     "/roadmap",
     roadmap.view(base_url, roadmap_entries, style_hash),
@@ -129,36 +129,37 @@ fn load_style_asset() -> Result(#(String, String), String) {
   Ok(#(asset_hash.hash(bit_array.from_string(content)), content))
 }
 
-/// Content-hashes glemy's real build output (copied into
-/// `static/play-demo/` before this runs -- see
-/// `.github/workflows/deploy.yml`) as one unit, renaming the whole
-/// directory to `static/play-demo-<hash>/` rather than hashing each
-/// file inside it individually: this is a bundler-free, raw-ESM build
-/// (decision 0003) whose files import each other by relative path, so
-/// renaming files individually would break those imports, while
-/// renaming the *directory* they're all already inside changes nothing
-/// about how they refer to each other. Returns the published path
-/// segment (e.g. `/play-demo-a1b2c3d4`) for `game_card` to build real
-/// links from.
+/// Content-hashes one of glemy's real build outputs (copied into
+/// `static/<base_name>/` before this runs, e.g.
+/// `static/play-demo-stable/` or `static/play-demo-edge/` -- see
+/// `.github/workflows/deploy.yml`, RM-025) as one unit, renaming the
+/// whole directory to `static/<base_name>-<hash>/` rather than hashing
+/// each file inside it individually: this is a bundler-free, raw-ESM
+/// build (decision 0003) whose files import each other by relative
+/// path, so renaming files individually would break those imports,
+/// while renaming the *directory* they're all already inside changes
+/// nothing about how they refer to each other. Returns the published
+/// path segment (e.g. `/play-demo-stable-a1b2c3d4`) for `game_card` to
+/// build real links from.
 ///
 /// Tolerant of the demo not being freshly copied in this run: if
-/// `static/play-demo` (the unhashed name the copy step always uses) no
-/// longer exists -- already renamed by a prior local build that reused
-/// the same `static/` directory without recopying -- this looks for
-/// whatever `play-demo-*` directory is already there instead of
-/// failing, and falls back to the plain, unhashed `/play-demo` if
+/// `static/<base_name>` (the unhashed name the copy step always uses)
+/// no longer exists -- already renamed by a prior local build that
+/// reused the same `static/` directory without recopying -- this looks
+/// for whatever `<base_name>-*` directory is already there instead of
+/// failing, and falls back to the plain, unhashed `/<base_name>` if
 /// neither exists at all (a partial local build not exercising the
 /// live demo shouldn't fail the whole site build over it -- the link
 /// simply 404s until the demo is actually copied in, matching this
 /// project's behavior before content-hashing existed).
-fn prepare_play_demo_dir() -> Result(String, String) {
-  let unhashed_dir = "./static/play-demo"
+fn prepare_play_demo_dir(base_name: String) -> Result(String, String) {
+  let unhashed_dir = "./static/" <> base_name
   case simplifile.is_directory(unhashed_dir) {
     Ok(True) -> {
       use files <- result.try(
         simplifile.get_files(in: unhashed_dir)
         |> result.map_error(fn(error) {
-          "could not list static/play-demo: " <> string.inspect(error)
+          "could not list static/" <> base_name <> ": " <> string.inspect(error)
         }),
       )
       use contents <- result.try(
@@ -171,30 +172,32 @@ fn prepare_play_demo_dir() -> Result(String, String) {
         }),
       )
       let hash = asset_hash.hash(bit_array.concat(contents))
-      let hashed_dir = "./static/play-demo-" <> hash
+      let hashed_dir = "./static/" <> base_name <> "-" <> hash
       use _ <- result.try(
         simplifile.rename(at: unhashed_dir, to: hashed_dir)
         |> result.map_error(fn(error) {
-          "could not rename static/play-demo to "
+          "could not rename static/"
+          <> base_name
+          <> " to "
           <> hashed_dir
           <> ": "
           <> string.inspect(error)
         }),
       )
-      Ok("/play-demo-" <> hash)
+      Ok("/" <> base_name <> "-" <> hash)
     }
-    _ -> Ok(discover_or_default_play_demo_path())
+    _ -> Ok(discover_or_default_play_demo_path(base_name))
   }
 }
 
-fn discover_or_default_play_demo_path() -> String {
+fn discover_or_default_play_demo_path(base_name: String) -> String {
   case simplifile.read_directory("./static") {
     Ok(entries) ->
-      case list.find(entries, string.starts_with(_, "play-demo")) {
+      case list.find(entries, string.starts_with(_, base_name <> "-")) {
         Ok(name) -> "/" <> name
-        Error(_) -> "/play-demo"
+        Error(_) -> "/" <> base_name
       }
-    Error(_) -> "/play-demo"
+    Error(_) -> "/" <> base_name
   }
 }
 

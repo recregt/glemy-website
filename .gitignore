@@ -12,8 +12,9 @@ erl_crash.dump
 /decisions.jsonl
 /development-plan.jsonl
 
-# glemy's own build output, copied in at build time -- not source, a
-# generated artifact of a different repo. build.gleam renames the
-# unhashed play-demo/ to a content-hashed play-demo-<hash>/ in place
-# (RM-024) -- the glob covers both the pre- and post-rename name.
+# glemy's own build output (both the stable and edge channels -- RM-025),
+# copied in at build time -- not source, a generated artifact of a
+# different repo. build.gleam renames each unhashed play-demo-{stable,
+# edge}/ to a content-hashed play-demo-{stable,edge}-<hash>/ in place
+# (RM-024) -- the glob covers every pre- and post-rename name.
 /static/play-demo*

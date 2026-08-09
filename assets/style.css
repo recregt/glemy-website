@@ -266,8 +266,20 @@ a:hover {
   color: var(--fg-dim);
 }
 
+.game-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .game-card-play {
   display: inline-block;
+}
+
+.game-card-edge-link {
+  font-size: 0.85rem;
+  color: var(--fg-dim);
 }
 
 @media (max-width: 30rem) {

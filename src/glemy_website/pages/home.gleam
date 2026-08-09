@@ -1,4 +1,4 @@
-import glemy_website/game_card
+import glemy_website/game_card.{type DemoPaths}
 import glemy_website/layout
 import lustre/attribute
 import lustre/element.{type Element}
@@ -7,7 +7,7 @@ import lustre/element/html
 pub fn view(
   base_url: String,
   style_hash: String,
-  play_demo_path: String,
+  demo: DemoPaths,
 ) -> Element(a) {
   layout.page(
     base_url: base_url,
@@ -63,7 +63,7 @@ pub fn view(
           ),
         ]),
         html.div([attribute.class("game-card-list")], [
-          game_card.tiers_card(base_url, play_demo_path),
+          game_card.tiers_card(base_url, demo),
         ]),
         html.p([], [
           html.text("More games, in different genres, are next — tracked, not just promised, in the "),

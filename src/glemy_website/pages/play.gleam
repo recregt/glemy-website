@@ -5,12 +5,13 @@
 ////
 //// Each card links straight to glemy's own real build output (copied
 //// into the site's static assets under a content-hashed
-//// `/play-demo-<hash>/` directory -- see `.github/workflows/deploy.yml`
-//// and `build.gleam`) in a new tab, rather than embedding it in an
-//// iframe on this page: the game is its own genuinely self-contained,
-//// playable thing, not a preview of one.
+//// `/play-demo-{stable,edge}-<hash>/` directory -- see
+//// `.github/workflows/deploy.yml` and `build.gleam`) in a new tab,
+//// rather than embedding it in an iframe on this page: the game is
+//// its own genuinely self-contained, playable thing, not a preview of
+//// one.
 
-import glemy_website/game_card
+import glemy_website/game_card.{type DemoPaths}
 import glemy_website/layout
 import lustre/attribute
 import lustre/element.{type Element}
@@ -19,7 +20,7 @@ import lustre/element/html
 pub fn view(
   base_url: String,
   style_hash: String,
-  play_demo_path: String,
+  demo: DemoPaths,
 ) -> Element(a) {
   layout.page(
     base_url: base_url,
@@ -37,7 +38,7 @@ pub fn view(
         ]),
         html.div(
           [attribute.class("game-card-list")],
-          game_card.catalog(base_url, play_demo_path),
+          game_card.catalog(base_url, demo),
         ),
       ]),
     ],
