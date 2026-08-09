@@ -96,23 +96,37 @@ jobs:
       # full copy of build/dev/javascript (not a shared one) because
       # build.gleam's prepare_play_demo_dir renames the whole directory
       # in place per demo, and a directory can only be renamed once.
+      #
+      # Each game's copy is guarded by a real file-existence check, not
+      # assumed unconditionally: "stable" is a *deliberately* pinned,
+      # lagging checkout (decision 0046/RM-025 -- STABLE_GLEMY_REF only
+      # moves on a deliberate commit, never automatically), so a game
+      # added to glemy after the current pin genuinely has no HTML entry
+      # point yet in glemy-stable. The whole per-demo block (mkdir
+      # included, not just the cp) is skipped in that case -- creating
+      # an empty static/play-demo-breakout-stable/ directory would make
+      # build.gleam's prepare_play_demo_dir see an existing-but-empty
+      # directory and hash/rename that instead of correctly falling
+      # back to its own already-documented "directory doesn't exist"
+      # path (a real, worse failure mode: a demo link that looks built
+      # but serves nothing, instead of a 404 until stable catches up).
       - name: Copy the live demo builds into static assets
         run: |
-          mkdir -p static/play-demo-edge/build/dev
-          cp glemy-edge/index.html static/play-demo-edge/index.html
-          cp -r glemy-edge/build/dev/javascript static/play-demo-edge/build/dev/javascript
+          copy_demo() {
+            local src_dir="$1" html_file="$2" dest_dir="$3"
+            if [ -f "$src_dir/$html_file" ]; then
+              mkdir -p "$dest_dir/build/dev"
+              cp "$src_dir/$html_file" "$dest_dir/index.html"
+              cp -r "$src_dir/build/dev/javascript" "$dest_dir/build/dev/javascript"
+            else
+              echo "Skipping $dest_dir: $src_dir/$html_file does not exist in this checkout."
+            fi
+          }
 
-          mkdir -p static/play-demo-stable/build/dev
-          cp glemy-stable/index.html static/play-demo-stable/index.html
-          cp -r glemy-stable/build/dev/javascript static/play-demo-stable/build/dev/javascript
-
-          mkdir -p static/play-demo-breakout-edge/build/dev
-          cp glemy-edge/breakout.html static/play-demo-breakout-edge/index.html
-          cp -r glemy-edge/build/dev/javascript static/play-demo-breakout-edge/build/dev/javascript
-
-          mkdir -p static/play-demo-breakout-stable/build/dev
-          cp glemy-stable/breakout.html static/play-demo-breakout-stable/index.html
-          cp -r glemy-stable/build/dev/javascript static/play-demo-breakout-stable/build/dev/javascript
+          copy_demo glemy-edge index.html static/play-demo-edge
+          copy_demo glemy-stable index.html static/play-demo-stable
+          copy_demo glemy-edge breakout.html static/play-demo-breakout-edge
+          copy_demo glemy-stable breakout.html static/play-demo-breakout-stable
 
       - name: Setup Pages
         id: pages
