@@ -2,11 +2,12 @@ name: Build and deploy
 
 # Rebuilds and republishes on every push, and once a day on a schedule
 # (06:00 UTC) so the devlog and the live demo stay current even when
-# glemy itself changes without a corresponding push here -- the two
-# repos are deliberately separate (see glemy's ARCHITECTURE.md /
-# docs/decisions.jsonl for the reasoning), so there's no single push
-# event that naturally covers both. workflow_dispatch is there for a
-# manual rebuild on demand, e.g. right after a real glemy release.
+# glemy or glemy-games change without a corresponding push here -- all
+# three repos are deliberately separate (see glemy's ARCHITECTURE.md /
+# docs/decisions.jsonl for the reasoning, including the glemy-games
+# split), so there's no single push event that naturally covers all of
+# them. workflow_dispatch is there for a manual rebuild on demand, e.g.
+# right after a real glemy or glemy-games release.
 on:
   push:
     branches: [main]
@@ -32,30 +33,43 @@ jobs:
       - name: Checkout glemy-website
         uses: actions/checkout@v7
 
-      # "Edge" always tracks glemy's default branch directly -- decisions
-      # and roadmap content are also fetched from here, since those track
-      # main regardless of which build is currently the stable demo.
-      - name: Checkout glemy (edge)
+      # Only for decisions.jsonl/development-plan.jsonl below -- glemy
+      # itself no longer gets built directly here (see glemy-games
+      # checkouts below): games moved into their own repository, and
+      # `gleam build` inside a glemy-games checkout pulls and builds
+      # glemy automatically via its own git dependency. This checkout
+      # always tracks glemy's default branch, independent of which
+      # glemy-games commit is currently the stable demo -- decisions and
+      # roadmap content track main regardless.
+      - name: Checkout glemy (for decisions/roadmap content only)
         uses: actions/checkout@v7
         with:
           repository: recregt/glemy
-          path: glemy-edge
+          path: glemy-docs
 
-      - name: Read the pinned stable glemy ref
+      # "Edge" always tracks glemy-games' default branch directly.
+      - name: Checkout glemy-games (edge)
+        uses: actions/checkout@v7
+        with:
+          repository: recregt/glemy-games
+          path: glemy-games-edge
+
+      - name: Read the pinned stable glemy-games ref
         id: stable_ref
-        run: echo "ref=$(cat STABLE_GLEMY_REF)" >> "$GITHUB_OUTPUT"
+        run: echo "ref=$(cat STABLE_GLEMY_GAMES_REF)" >> "$GITHUB_OUTPUT"
 
-      # "Stable" is pinned to whatever commit STABLE_GLEMY_REF names --
-      # promoted automatically by promote-stable.yml once a glemy commit's
-      # own CI passes (decision 0057, docs/technical-architecture.md
-      # §3.4, RM-025), never an untested or failing one. Kept as a
-      # genuinely separate checkout (not, e.g., a git-reset on the edge
-      # one) so both builds exist side by side for the same run.
-      - name: Checkout glemy (stable)
+      # "Stable" is pinned to whatever commit STABLE_GLEMY_GAMES_REF
+      # names -- promoted automatically by promote-stable.yml once a
+      # glemy-games commit's own CI passes (decision 0057's model,
+      # carried over to glemy-games post-split), never an untested or
+      # failing one. Kept as a genuinely separate checkout (not, e.g., a
+      # git-reset on the edge one) so both builds exist side by side for
+      # the same run.
+      - name: Checkout glemy-games (stable)
         uses: actions/checkout@v7
         with:
-          repository: recregt/glemy
-          path: glemy-stable
+          repository: recregt/glemy-games
+          path: glemy-games-stable
           ref: ${{ steps.stable_ref.outputs.ref }}
 
       - uses: erlef/setup-beam@v1.24.1
@@ -71,23 +85,32 @@ jobs:
 
       - name: Fetch decisions.jsonl and development-plan.jsonl from glemy
         run: |
-          cp glemy-edge/docs/decisions.jsonl decisions.jsonl
-          cp glemy-edge/docs/development-plan.jsonl development-plan.jsonl
+          cp glemy-docs/docs/decisions.jsonl decisions.jsonl
+          cp glemy-docs/docs/development-plan.jsonl development-plan.jsonl
 
-      - name: Build glemy's JavaScript target (edge)
-        working-directory: glemy-edge
+      # Building glemy-games alone is enough: its own git dependency on
+      # glemy makes `gleam build` resolve and build glemy too, into the
+      # same build/dev/javascript tree each HTML entry point already
+      # expects (./build/dev/javascript/glemy/glemy/*.mjs for the engine,
+      # ./build/dev/javascript/glemy_games/glemy_games/*.mjs for the
+      # game itself) -- no separate glemy checkout/build step needed for
+      # the demos anymore.
+      - name: Build glemy-games's JavaScript target (edge)
+        working-directory: glemy-games-edge
         run: gleam deps download && gleam build --target javascript
 
-      - name: Build glemy's JavaScript target (stable)
-        working-directory: glemy-stable
+      - name: Build glemy-games's JavaScript target (stable)
+        working-directory: glemy-games-stable
         run: gleam deps download && gleam build --target javascript
 
       # Preserves each checkout's own index.html's relative import paths
-      # (./build/dev/javascript/glemy/glemy/*.mjs) exactly, so the
-      # copied demo runs unmodified -- the same output the local dev
-      # server already serves directly from a glemy repo root. Two
-      # separate unhashed directories; build.gleam content-hashes and
-      # renames each independently (RM-024).
+      # (./build/dev/javascript/<pkg>/<pkg>/*.mjs, covering both the
+      # glemy engine and the glemy_games package built alongside it via
+      # the git dependency) exactly, so the copied demo runs unmodified
+      # -- the same output the local dev server already serves directly
+      # from a glemy-games repo root. Two separate unhashed directories;
+      # build.gleam content-hashes and renames each independently
+      # (RM-024).
       #
       # Each additional game (Breakout, decisions 0052/0053; Platformer,
       # RM-034/decision 0060) gets its own pair of directories, renaming
@@ -99,13 +122,13 @@ jobs:
       #
       # Each game's copy is guarded by a real file-existence check, not
       # assumed unconditionally: even with promote-stable.yml's automatic
-      # promotion (decision 0057), STABLE_GLEMY_REF can still momentarily
-      # lag a brand new game's own first commit (the promotion runs on
-      # its own schedule, not synchronously with every glemy push), so a
-      # game just added to glemy can genuinely have no HTML entry point
-      # yet in glemy-stable. The whole per-demo block (mkdir included,
-      # not just the cp) is skipped in that case -- creating an empty
-      # static/play-demo-<game>-stable/ directory would make
+      # promotion, STABLE_GLEMY_GAMES_REF can still momentarily lag a
+      # brand new game's own first commit (the promotion runs on its own
+      # schedule, not synchronously with every glemy-games push), so a
+      # game just added to glemy-games can genuinely have no HTML entry
+      # point yet in glemy-games-stable. The whole per-demo block (mkdir
+      # included, not just the cp) is skipped in that case -- creating an
+      # empty static/play-demo-<game>-stable/ directory would make
       # build.gleam's prepare_play_demo_dir see an existing-but-empty
       # directory and hash/rename that instead of correctly falling back
       # to its own already-documented "directory doesn't exist" path (a
@@ -124,12 +147,12 @@ jobs:
             fi
           }
 
-          copy_demo glemy-edge index.html static/play-demo-edge
-          copy_demo glemy-stable index.html static/play-demo-stable
-          copy_demo glemy-edge breakout.html static/play-demo-breakout-edge
-          copy_demo glemy-stable breakout.html static/play-demo-breakout-stable
-          copy_demo glemy-edge platformer.html static/play-demo-platformer-edge
-          copy_demo glemy-stable platformer.html static/play-demo-platformer-stable
+          copy_demo glemy-games-edge index.html static/play-demo-edge
+          copy_demo glemy-games-stable index.html static/play-demo-stable
+          copy_demo glemy-games-edge breakout.html static/play-demo-breakout-edge
+          copy_demo glemy-games-stable breakout.html static/play-demo-breakout-stable
+          copy_demo glemy-games-edge platformer.html static/play-demo-platformer-edge
+          copy_demo glemy-games-stable platformer.html static/play-demo-platformer-stable
 
       - name: Setup Pages
         id: pages

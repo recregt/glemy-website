@@ -1,23 +1,30 @@
 name: Promote stable
 
-# Auto-promotes STABLE_GLEMY_REF to the most recent glemy `main` commit
-# whose own CI (glemy's .github/workflows/ci.yml -- gleam build/gleam
-# test, both targets) actually succeeded -- never promotes an untested
-# or failing commit, but no longer requires a deliberate manual commit
-# either. Supersedes decision 0046's manual-only promotion model; see
-# docs/decisions.jsonl for the decision that introduced this workflow.
+# Auto-promotes STABLE_GLEMY_GAMES_REF to the most recent glemy-games
+# `main` commit whose own CI (glemy-games' .github/workflows/ci.yml --
+# gleam build/gleam test, both targets, which transitively builds glemy
+# too via glemy-games' git dependency on it) actually succeeded -- never
+# promotes an untested or failing commit, but no longer requires a
+# deliberate manual commit either. Carries decision 0046/0057's model
+# over to glemy-games post-split: previously this polled glemy's own CI
+# directly (before games moved into glemy-games), now it polls
+# glemy-games' CI instead, which itself only goes green when the glemy
+# commit it currently depends on also builds and tests cleanly -- so a
+# glemy-side regression still blocks promotion here, just one hop
+# removed. See docs/decisions.jsonl for the decision that introduced
+# this workflow and the one that introduced the glemy-games split.
 #
 # Polling on a schedule, not a push-triggered cross-repo dispatch: a
-# real event-driven trigger (glemy's own CI notifying this repo the
+# real event-driven trigger (glemy-games' own CI notifying this repo the
 # moment it goes green) needs a personal access token with cross-repo
 # permissions stored as a secret here -- deliberately not set up
 # without the user creating that secret themselves. The default
 # GITHUB_TOKEN this workflow already has is scoped to this repository
 # only, but reading a *different public* repository's Actions run
 # history needs no authentication at all (confirmed directly: `gh api
-# repos/recregt/glemy/actions/workflows/ci.yml/runs` returns real data
-# with just this repo's own token), so a schedule is what's available
-# without asking for more access than this repo already has.
+# repos/recregt/glemy-games/actions/workflows/ci.yml/runs` returns real
+# data with just this repo's own token), so a schedule is what's
+# available without asking for more access than this repo already has.
 on:
   schedule:
     - cron: "0 * * * *"
@@ -37,33 +44,33 @@ jobs:
       - name: Checkout glemy-website
         uses: actions/checkout@v7
 
-      - name: Find the latest glemy main commit with a passing CI run
+      - name: Find the latest glemy-games main commit with a passing CI run
         id: latest_green
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sha=$(gh api "repos/recregt/glemy/actions/workflows/ci.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
+          sha=$(gh api "repos/recregt/glemy-games/actions/workflows/ci.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // empty')
           if [ -z "$sha" ]; then
-            echo "No successful glemy CI run found on main yet -- leaving STABLE_GLEMY_REF unchanged."
+            echo "No successful glemy-games CI run found on main yet -- leaving STABLE_GLEMY_GAMES_REF unchanged."
           fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
-      - name: Update STABLE_GLEMY_REF if a newer green commit exists
+      - name: Update STABLE_GLEMY_GAMES_REF if a newer green commit exists
         id: update
         if: steps.latest_green.outputs.sha != ''
         run: |
           new="${{ steps.latest_green.outputs.sha }}"
-          current="$(cat STABLE_GLEMY_REF)"
+          current="$(cat STABLE_GLEMY_GAMES_REF)"
           if [ "$current" = "$new" ]; then
-            echo "STABLE_GLEMY_REF is already at $new -- nothing to promote."
+            echo "STABLE_GLEMY_GAMES_REF is already at $new -- nothing to promote."
             echo "promoted=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          echo "$new" > STABLE_GLEMY_REF
+          echo "$new" > STABLE_GLEMY_GAMES_REF
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add STABLE_GLEMY_REF
-          git commit -m "Auto-promote stable to glemy@${new:0:7} (CI passed)"
+          git add STABLE_GLEMY_GAMES_REF
+          git commit -m "Auto-promote stable to glemy-games@${new:0:7} (CI passed)"
           git push
           echo "promoted=true" >> "$GITHUB_OUTPUT"
 
